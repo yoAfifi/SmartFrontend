@@ -25,6 +25,21 @@
               <label for="editDescription" class="form-label">Description</label>
               <textarea id="editDescription" class="form-control" v-model="editData.description"></textarea>
             </div>
+            <div class="mb-3">
+              <label class="form-label">Replace image (optional)</label>
+              <input type="file" class="form-control" accept="image/*" @change="onFile">
+            </div>
+
+            <!-- Optional live preview of the new image -->
+            <div v-if="preview" class="mb-2">
+              <img :src="preview" class="rounded" style="height:100px;object-fit:cover">
+            </div>
+
+            <!-- Show current image if exists and no new preview selected -->
+            <div v-else-if="editData.imageUrl" class="mb-2">
+              <img :src="editData.imageUrl" class="rounded" style="height:100px;object-fit:cover">
+            </div>
+
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -37,13 +52,14 @@
 </template>
 
 <script setup>
-import { ref, watch, defineProps, defineEmits, onMounted } from 'vue';
-import { updateProduct as updateProductService } from '@/services/productService';
+/* global bootstrap */
+import { ref, watch, defineProps, defineEmits, onMounted, onBeforeUnmount } from 'vue'
+import { updateProduct } from '@/services/productService'
 
 const props = defineProps({
-  product: Object
-});
-const emit = defineEmits(['updated']);
+  product: { type: Object, default: null }
+})
+const emit = defineEmits(['updated'])
 
 const editData = ref({
   id: null,
@@ -51,42 +67,63 @@ const editData = ref({
   price: 0,
   stock_quantity: 0,
   description: ''
-});
+})
 
-// Watch for changes in the product prop and update editData accordingly.
+// NEW: files & previews for multi‑image upload
+const files = ref([])     // File[]
+const previews = ref([])  // string[] (Object URLs)
+
+function onFiles (e) {
+  // revoke previous previews
+  previews.value.forEach(URL.revokeObjectURL)
+  files.value = [...(e.target.files || [])]
+  previews.value = files.value.map(f => URL.createObjectURL(f))
+}
+
+// keep your watcher to fill the form when product changes
 watch(
     () => props.product,
-    (newProduct) => {
-      if (newProduct) {
-        editData.value = { ...newProduct };
+    (p) => {
+      if (p) {
+        editData.value = { ...p }
+        // clear selection when switching product
+        files.value = []
+        previews.value.forEach(URL.revokeObjectURL)
+        previews.value = []
       }
     },
     { immediate: true }
-);
+)
 
-const submitEdit = async () => {
+async function submitEdit () {
   try {
-    await updateProductService(editData.value.id, editData.value);
-    emit('updated', editData.value);
-    // Hide the modal using Bootstrap's modal API
-    const modalEl = document.getElementById('editProductModal');
-    const modalInstance = bootstrap.Modal.getInstance(modalEl);
-    if (modalInstance) {
-      modalInstance.hide();
-    }
+    await updateProduct(editData.value.id, editData.value, files.value) // <-- pass files
+    emit('updated', { ...editData.value })
+    const modalEl = document.getElementById('editProductModal')
+    const instance = bootstrap.Modal.getInstance(modalEl)
+    if (instance) instance.hide()
   } catch (error) {
-    console.error('Error updating product:', error);
+    console.error('Error updating product:', error)
   }
-};
+}
 
 onMounted(() => {
-  const modalEl = document.getElementById('editProductModal');
+  const modalEl = document.getElementById('editProductModal')
   if (!bootstrap.Modal.getInstance(modalEl)) {
-    new bootstrap.Modal(modalEl);
+    new bootstrap.Modal(modalEl)
   }
-});
-</script>
+  // reset file input when modal closes
+  modalEl?.addEventListener('hidden.bs.modal', () => {
+    files.value = []
+    previews.value.forEach(URL.revokeObjectURL)
+    previews.value = []
+  })
+})
 
+onBeforeUnmount(() => {
+  previews.value.forEach(URL.revokeObjectURL)
+})
+</script>
 <style scoped>
 /* Adjust modal styling as needed */
 </style>
