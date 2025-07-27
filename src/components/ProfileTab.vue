@@ -1,81 +1,89 @@
 <template>
   <div class="profile-tab">
-    <div v-if="!profile || !profile.id" class="alert alert-warning">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      No profile data found. Please complete your profile information.
+    <!-- Show loading state when profile is not available -->
+    <div v-if="!profile" class="alert alert-info">
+      <i class="bi bi-info-circle me-2"></i>
+      Loading profile...
     </div>
     
-    <div class="profile-container">
+    <!-- Show warning when profile exists but has no ID -->
+    <div v-else-if="!profile.id" class="alert alert-warning">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ $t('common.common.noProfileData') }}
+    </div>
+    
+    <!-- Show profile content when profile is available -->
+    <div v-else class="profile-container">
       <div class="profile-header">
         <div class="profile-avatar">
           <i class="bi bi-person-circle"></i>
         </div>
         <div class="profile-title">
-          <h2>{{ profile.name || 'Customer' }}</h2>
-          <p>{{ profile.email || 'No email provided' }}</p>
+          <h2>{{ profile.name || $t('common.common.customer') }}</h2>
+          <p>{{ profile.email || $t('common.common.noEmailProvided') }}</p>
         </div>
       </div>
       
       <div class="profile-body">
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>Personal Information</h3>
+            <h3>{{ $t('common.common.personalInformation') }}</h3>
             <button class="btn btn-sm btn-outline-primary" @click="editMode = !editMode">
               <i class="bi" :class="editMode ? 'bi-x-circle' : 'bi-pencil'"></i>
-              {{ editMode ? 'Cancel' : 'Edit' }}
+              {{ editMode ? $t('common.common.cancel') : $t('common.common.edit') }}
             </button>
           </div>
           
           <div class="card-body">
             <form v-if="editMode" @submit.prevent="saveProfile">
               <div class="mb-3">
-                <label for="name" class="form-label">Full Name</label>
+                <label for="name" class="form-label">{{ $t('common.common.fullName') }}</label>
                 <input type="text" class="form-control" id="name" v-model="formData.name" required>
               </div>
               
               <div class="mb-3">
-                <label for="email" class="form-label">Email Address</label>
+                <label for="email" class="form-label">{{ $t('common.common.emailAddress') }}</label>
                 <input type="email" class="form-control" id="email" v-model="formData.email" required>
               </div>
               
               <div class="mb-3">
-                <label for="phone" class="form-label">Phone Number</label>
+                <label for="phone" class="form-label">{{ $t('common.common.phoneNumber') }}</label>
                 <input type="tel" class="form-control" id="phone" v-model="formData.phone">
               </div>
               
               <div class="mb-3">
-                <label for="address" class="form-label">Address</label>
+                <label for="address" class="form-label">{{ $t('common.common.address') }}</label>
                 <textarea class="form-control" id="address" v-model="formData.address" rows="3"></textarea>
               </div>
               
               <div class="d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-secondary" @click="editMode = false">Cancel</button>
+                <button type="button" class="btn btn-secondary" @click="editMode = false">{{ $t('common.common.cancel') }}</button>
                 <button type="submit" class="btn btn-primary" :disabled="isSaving">
                   <span v-if="isSaving" class="spinner-border spinner-border-sm me-2" role="status"></span>
-                  Save Changes
+                  {{ $t('common.common.saveChanges') }}
                 </button>
               </div>
             </form>
             
             <div v-else class="profile-info">
               <div class="info-group">
-                <div class="info-label">Full Name</div>
-                <div class="info-value">{{ profile.name || 'Not provided' }}</div>
+                <div class="info-label">{{ $t('common.common.fullName') }}</div>
+                <div class="info-value">{{ profile.name || $t('common.common.notProvided') }}</div>
               </div>
               
               <div class="info-group">
-                <div class="info-label">Email Address</div>
-                <div class="info-value">{{ profile.email || 'Not provided' }}</div>
+                <div class="info-label">{{ $t('common.common.emailAddress') }}</div>
+                <div class="info-value">{{ profile.email || $t('common.common.notProvided') }}</div>
               </div>
               
               <div class="info-group">
-                <div class="info-label">Phone Number</div>
-                <div class="info-value">{{ profile.phone || 'Not provided' }}</div>
+                <div class="info-label">{{ $t('common.common.phoneNumber') }}</div>
+                <div class="info-value">{{ profile.phone || $t('common.common.notProvided') }}</div>
               </div>
               
               <div class="info-group">
-                <div class="info-label">Address</div>
-                <div class="info-value">{{ profile.address || 'Not provided' }}</div>
+                <div class="info-label">{{ $t('common.common.address') }}</div>
+                <div class="info-value">{{ profile.address || $t('common.common.notProvided') }}</div>
               </div>
             </div>
           </div>
@@ -83,7 +91,7 @@
         
         <div class="card mt-4">
           <div class="card-header">
-            <h3>Account Summary</h3>
+            <h3>{{ $t('common.common.accountSummary') }}</h3>
           </div>
           
           <div class="card-body">
@@ -94,17 +102,17 @@
                 </div>
                 <div class="stat-content">
                   <div class="stat-value">{{ orderCount }}</div>
-                  <div class="stat-label">Total Orders</div>
+                  <div class="stat-label">{{ $t('dashboard.stats.totalOrders') }}</div>
                 </div>
               </div>
               
               <div class="stat-card">
                 <div class="stat-icon pending-icon">
-                  <i class="bi bi-hourglass-split"></i>
+                  <i class="bi bi-clock"></i>
                 </div>
                 <div class="stat-content">
                   <div class="stat-value">{{ pendingOrderCount }}</div>
-                  <div class="stat-label">Pending Orders</div>
+                  <div class="stat-label">{{ $t('common.common.pendingOrders') }}</div>
                 </div>
               </div>
               
@@ -114,7 +122,7 @@
                 </div>
                 <div class="stat-content">
                   <div class="stat-value">{{ completedOrderCount }}</div>
-                  <div class="stat-label">Completed Orders</div>
+                  <div class="stat-label">{{ $t('common.common.completedOrders') }}</div>
                 </div>
               </div>
             </div>
@@ -133,7 +141,8 @@ import { updateCustomer } from '@/services/customerService';
 const props = defineProps({
   profile: {
     type: Object,
-    required: true
+    required: false,
+    default: () => ({})
   }
 });
 
@@ -151,7 +160,7 @@ const orders = ref([]);
 
 onMounted(async () => {
   resetForm();
-  if (props.profile.id) {
+  if (props.profile && props.profile.id) {
     try {
       const response = await getOrdersByCustomer(props.profile.id);
       orders.value = response.data;
@@ -163,10 +172,10 @@ onMounted(async () => {
 
 function resetForm() {
   formData.value = {
-    name: props.profile.name || '',
-    email: props.profile.email || '',
-    phone: props.profile.phone || '',
-    address: props.profile.address || ''
+    name: props.profile?.name || '',
+    email: props.profile?.email || '',
+    phone: props.profile?.phone || '',
+    address: props.profile?.address || ''
   };
 }
 
@@ -174,16 +183,16 @@ function resetForm() {
 watch(() => props.profile, (newProfile) => {
   if (newProfile) {
     formData.value = {
-      name: newProfile.name || '',
-      email: newProfile.email || '',
-      phone: newProfile.phone || '',
-      address: newProfile.address || ''
+      name: newProfile?.name || '',
+      email: newProfile?.email || '',
+      phone: newProfile?.phone || '',
+      address: newProfile?.address || ''
     };
   }
 }, { immediate: true });
 
 async function saveProfile() {
-  if (!props.profile.id) {
+  if (!props.profile || !props.profile.id) {
     console.error('No profile ID found');
     return;
   }

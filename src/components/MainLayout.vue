@@ -6,7 +6,7 @@
       <div class="container-fluid">
         <a class="navbar-brand" href="#">
           <i class="bi bi-box-seam me-2"></i>
-          SmartStock
+          {{ $t('common.brand.name') }}
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
@@ -14,10 +14,13 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
-              <router-link class="nav-link" to="/login">Login</router-link>
+              <router-link class="nav-link" to="/login">{{ $t('common.navigation.login') }}</router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" to="/register">Register</router-link>
+              <router-link class="nav-link" to="/register">{{ $t('common.navigation.register') }}</router-link>
+            </li>
+            <li class="nav-item">
+              <LanguageSwitcher />
             </li>
           </ul>
         </div>
@@ -34,11 +37,11 @@
       <div class="container">
         <div class="row">
           <div class="col-md-6">
-            <p>&copy; 2023 SmartStock. All rights reserved.</p>
+            <p>{{ $t('common.footer.copyright') }}</p>
           </div>
           <div class="col-md-6 text-md-end">
-            <a href="#" class="text-decoration-none me-3">Privacy Policy</a>
-            <a href="#" class="text-decoration-none">Terms of Service</a>
+            <a href="#" class="text-decoration-none me-3">{{ $t('common.footer.privacyPolicy') }}</a>
+            <a href="#" class="text-decoration-none">{{ $t('common.footer.termsOfService') }}</a>
           </div>
         </div>
       </div>
@@ -47,6 +50,7 @@
 </template>
 
 <script setup>
+import LanguageSwitcher from './LanguageSwitcher.vue'
 </script>
 
 <style scoped>

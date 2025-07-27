@@ -1,81 +1,235 @@
 import axios from 'axios'
+import { useToast } from 'vue-toastification'
 
-// We only have a single base for the Gateway:
-const gatewayBase = import.meta.env.VITE_API_BASE_URL
+// Environment variables - Use relative URLs for Vite proxy
+const gatewayBase = import.meta.env.VITE_API_GATEWAY_BASE_URL || '/api'
+const cartServiceUrl = import.meta.env.VITE_CART_SERVICE_URL || '/api/cart'
 
-// Product API goes through the Gateway route /api/products
-export const productApi = axios.create({
-    baseURL: `${gatewayBase}/api/products`,
-    headers: { 'Content-Type': 'application/json' }
-})
+// Toast instance
+const toast = useToast()
 
-// Order API goes through the Gateway route /api/orders
-export const orderApi = axios.create({
-    baseURL: `${gatewayBase}/api/orders`,
-    headers: { 'Content-Type': 'application/json' }
-})
-
-// Customer API
-export const customerApi = axios.create({
-    baseURL: `${gatewayBase}/api/customers`,
-    headers: { 'Content-Type': 'application/json' }
-})
-
-// Auth API
-export const authApi = axios.create({
-    baseURL: `${gatewayBase}/api/auth`,
-    headers: { 'Content-Type': 'application/json' }
-})
-
-// Add request interceptor to include auth token
-export const setupInterceptors = () => {
-    const interceptor = (config) => {
-        const token = localStorage.getItem('token')
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`
-        }
-        return config
-    }
-
-    productApi.interceptors.request.use(interceptor)
-    orderApi.interceptors.request.use(interceptor)
-    customerApi.interceptors.request.use(interceptor)
-    // Don't add to authApi as login/register don't need auth
+// Error types for consistent handling
+export const ErrorTypes = {
+  NETWORK: 'NETWORK',
+  AUTHENTICATION: 'AUTHENTICATION',
+  AUTHORIZATION: 'AUTHORIZATION',
+  VALIDATION: 'VALIDATION',
+  NOT_FOUND: 'NOT_FOUND',
+  SERVER_ERROR: 'SERVER_ERROR',
+  UNKNOWN: 'UNKNOWN'
 }
 
-// Add response interceptor to handle auth errors
-export const setupResponseInterceptors = () => {
-    const responseInterceptor = (response) => {
-        return response;
-    };
+// Error mapping function
+function mapErrorToType(error) {
+  if (!error.response) {
+    return ErrorTypes.NETWORK
+  }
+  
+  const status = error.response.status
+  switch (status) {
+    case 401:
+      return ErrorTypes.AUTHENTICATION
+    case 403:
+      return ErrorTypes.AUTHORIZATION
+    case 400:
+      return ErrorTypes.VALIDATION
+    case 404:
+      return ErrorTypes.NOT_FOUND
+    case 500:
+      return ErrorTypes.SERVER_ERROR
+    default:
+      return ErrorTypes.UNKNOWN
+  }
+}
 
-    const errorInterceptor = (error) => {
-        if (error.response) {
-            if (error.response.status === 401) {
-                console.log('Authentication error: Unauthorized');
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
-                window.location.href = '/login';
-            } else if (error.response.status === 403) {
-                console.log('Authorization error: Forbidden', error.config.url);
-                // For order history specifically, we'll handle this in the component
-                if (error.config.url.includes('/api/orders/customer/')) {
-                    return Promise.reject({
-                        ...error,
-                        message: 'You do not have permission to view these orders.'
-                    });
-                }
-            }
+// Error message mapping
+function getErrorMessage(errorType, error) {
+  const messages = {
+    [ErrorTypes.NETWORK]: 'Network error. Please check your connection.',
+    [ErrorTypes.AUTHENTICATION]: 'Authentication failed. Please log in again.',
+    [ErrorTypes.AUTHORIZATION]: 'You do not have permission to perform this action.',
+    [ErrorTypes.VALIDATION]: error.response?.data?.message || 'Invalid data provided.',
+    [ErrorTypes.NOT_FOUND]: 'The requested resource was not found.',
+    [ErrorTypes.SERVER_ERROR]: 'Server error. Please try again later.',
+    [ErrorTypes.UNKNOWN]: 'An unexpected error occurred.'
+  }
+  
+  return messages[errorType] || messages[ErrorTypes.UNKNOWN]
+}
+
+// API instances
+export const productApi = axios.create({
+  baseURL: `${gatewayBase}/products`,
+  headers: { 'Content-Type': 'application/json' }
+})
+
+export const categoryApi = axios.create({
+  baseURL: `${gatewayBase}/categories`,
+  headers: { 'Content-Type': 'application/json' }
+})
+
+export const reviewApi = axios.create({
+  baseURL: `${gatewayBase}/products`,
+  headers: { 'Content-Type': 'application/json' }
+})
+
+export const cartApi = axios.create({
+  baseURL: `${gatewayBase}/cart`,
+  headers: { 'Content-Type': 'application/json' }
+})
+
+export const notificationApi = axios.create({
+  baseURL: `${gatewayBase}/admin/notifications`,
+  headers: { 'Content-Type': 'application/json' }
+})
+
+export const orderApi = axios.create({
+  baseURL: `${gatewayBase}/orders`,
+  headers: { 'Content-Type': 'application/json' }
+})
+
+export const customerApi = axios.create({
+  baseURL: `${gatewayBase}/customers`,
+  headers: { 'Content-Type': 'application/json' }
+})
+
+export const authApi = axios.create({
+  baseURL: `${gatewayBase}/auth`,
+  headers: { 'Content-Type': 'application/json' }
+})
+
+// Request interceptor to include auth token
+export const setupInterceptors = () => {
+  const interceptor = (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      // Validate token format before using it
+      try {
+        const tokenParts = token.split('.')
+        if (tokenParts.length === 3) {
+          config.headers.Authorization = `Bearer ${token}`
+        } else {
+          console.warn('Invalid token format, removing from localStorage')
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
         }
-        return Promise.reject(error);
-    };
+      } catch (error) {
+        console.error('Error validating token:', error)
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+      }
+    }
+    return config
+  }
 
-    productApi.interceptors.response.use(responseInterceptor, errorInterceptor);
-    orderApi.interceptors.response.use(responseInterceptor, errorInterceptor);
-    customerApi.interceptors.response.use(responseInterceptor, errorInterceptor);
-    authApi.interceptors.response.use(responseInterceptor, errorInterceptor);
-};
+  // Apply to all API instances except auth
+  const apis = [productApi, categoryApi, reviewApi, cartApi, notificationApi, orderApi, customerApi]
+  apis.forEach(api => api.interceptors.request.use(interceptor))
+}
+
+// Response interceptor for error handling
+export const setupResponseInterceptors = () => {
+  const responseInterceptor = (response) => {
+    return response
+  }
+
+  // Track shown toasts to prevent duplicates
+  const shownToasts = new Set()
+
+  const errorInterceptor = (error) => {
+    const errorType = mapErrorToType(error)
+    const message = getErrorMessage(errorType, error)
+    
+    // Create a unique key for this error to prevent duplicates
+    const errorKey = `${errorType}-${error.response?.status}-${message}`
+    
+    // Handle network errors (services offline) - don't logout
+    if (errorType === ErrorTypes.NETWORK) {
+      console.warn('Network error - services may be offline:', error.message)
+      if (!shownToasts.has(errorKey)) {
+        toast.error('Unable to connect to server. Please check if services are running.')
+        shownToasts.add(errorKey)
+        // Clear the toast after 5 seconds to allow future similar errors
+        setTimeout(() => shownToasts.delete(errorKey), 5000)
+      }
+      return Promise.reject(error)
+    }
+    
+    // Handle authentication errors (401) - only logout for actual auth issues
+    if (errorType === ErrorTypes.AUTHENTICATION) {
+      // Only logout if we have a token but it's invalid
+      const token = localStorage.getItem('token')
+      if (token) {
+        if (!shownToasts.has(errorKey)) {
+          toast.error('Your session has expired. Please log in again.')
+          shownToasts.add(errorKey)
+        }
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
+        window.location.href = '/login'
+      }
+      return Promise.reject(error)
+    }
+    
+    // Handle authorization errors (403) - only logout for actual permission issues
+    if (errorType === ErrorTypes.AUTHORIZATION) {
+      // Check if user is logged in
+      const token = localStorage.getItem('token')
+      const user = localStorage.getItem('user')
+      
+      if (!token || !user) {
+        if (!shownToasts.has(errorKey)) {
+          toast.error('Please log in to access this feature')
+          shownToasts.add(errorKey)
+        }
+        window.location.href = '/login'
+      } else {
+        // For 403 errors, show warning but don't automatically logout
+        // as it might be a temporary permission issue
+        if (!shownToasts.has(errorKey)) {
+          toast.error('You do not have permission to perform this action.')
+          shownToasts.add(errorKey)
+          setTimeout(() => shownToasts.delete(errorKey), 5000)
+        }
+      }
+      return Promise.reject(error)
+    }
+    
+    // Show toast for other errors (validation, server errors, etc.) - but only once
+    if (errorType !== ErrorTypes.NETWORK && !shownToasts.has(errorKey)) {
+      toast.error(message)
+      shownToasts.add(errorKey)
+      setTimeout(() => shownToasts.delete(errorKey), 5000)
+    }
+    
+    return Promise.reject(error)
+  }
+
+  // Apply to all API instances
+  const apis = [productApi, categoryApi, reviewApi, cartApi, notificationApi, orderApi, customerApi, authApi]
+  apis.forEach(api => api.interceptors.response.use(responseInterceptor, errorInterceptor))
+}
+
+// Success toast helper
+export const showSuccessToast = (message) => {
+  toast.success(message)
+}
+
+// Error toast helper
+export const showErrorToast = (message) => {
+  toast.error(message)
+}
+
+// Warning toast helper
+export const showWarningToast = (message) => {
+  toast.warning(message)
+}
+
+// Info toast helper
+export const showInfoToast = (message) => {
+  toast.info(message)
+}
 
 // Initialize interceptors automatically
-setupInterceptors();
-setupResponseInterceptors();
+setupInterceptors()
+setupResponseInterceptors()

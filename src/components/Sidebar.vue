@@ -3,43 +3,47 @@
     <div class="sidebar-header">
       <h2 class="sidebar-title">
         <i class="bi bi-speedometer2 me-2"></i>
-        Admin Dashboard
+        {{ $t('common.navigation.adminDashboard') }}
       </h2>
     </div>
     
     <div class="sidebar-content">
       <ul class="sidebar-nav">
         <li class="sidebar-item">
-          <router-link to="/admin-dashboard" class="sidebar-link" active-class="active-link">
+          <router-link to="/admin" class="sidebar-link" active-class="active-link">
             <i class="bi bi-house-door me-2"></i>
-            Home
+            {{ $t('common.navigation.home') }}
           </router-link>
         </li>
         <li class="sidebar-item">
-          <router-link to="/admin-products" class="sidebar-link" active-class="active-link">
+          <router-link to="/admin/products" class="sidebar-link" active-class="active-link">
             <i class="bi bi-box me-2"></i>
-            Products
+            {{ $t('common.navigation.products') }}
           </router-link>
         </li>
         <li class="sidebar-item">
-          <router-link to="/admin-orders" class="sidebar-link" active-class="active-link">
+          <router-link to="/admin/orders" class="sidebar-link" active-class="active-link">
             <i class="bi bi-cart me-2"></i>
-            Orders
+            {{ $t('common.navigation.orders') }}
           </router-link>
         </li>
         <li class="sidebar-item">
-          <router-link to="/admin-customers" class="sidebar-link" active-class="active-link">
+          <router-link to="/admin/customers" class="sidebar-link" active-class="active-link">
             <i class="bi bi-people me-2"></i>
-            Customers
+            {{ $t('common.navigation.customers') }}
           </router-link>
         </li>
       </ul>
     </div>
     
+    <div class="language-section">
+      <LanguageSwitcher context="sidebar" />
+    </div>
+    
     <div class="logout-section">
       <button class="btn btn-danger w-100" @click="logout">
         <i class="bi bi-box-arrow-right me-2"></i>
-        Logout
+        {{ $t('common.navigation.logout') }}
       </button>
     </div>
   </aside>
@@ -48,6 +52,7 @@
 <script setup>
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import LanguageSwitcher from './LanguageSwitcher.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -120,6 +125,11 @@ function logout() {
   color: white;
   background-color: rgba(255, 255, 255, 0.1);
   border-left: 3px solid var(--primary-color);
+}
+
+.language-section {
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logout-section {

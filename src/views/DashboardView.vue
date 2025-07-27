@@ -1,9 +1,13 @@
 <template>
   <div class="dashboard">
+
+    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <i class="bi bi-speedometer2"></i>
-        <h2 class="sidebar-title">Customer Dashboard</h2>
+        <h2 class="sidebar-title">
+          <i class="bi bi-speedometer2 me-2"></i>
+          {{ $t('common.navigation.dashboard') }}
+        </h2>
       </div>
       
       <div class="user-profile-mini">
@@ -11,51 +15,67 @@
           <i class="bi bi-person-circle"></i>
         </div>
         <div class="user-info">
-          <strong>{{ profile.name || 'Customer' }}</strong>
-          <small>{{ profile.email || 'No email' }}</small>
+          <strong>{{ profile?.name || $t('common.common.customer') }}</strong>
+          <small>{{ profile?.email || $t('common.common.noEmailProvided') }}</small>
         </div>
       </div>
       
       <ul class="nav-menu">
         <li @click="activeTab = 'profile'" :class="{active: activeTab === 'profile'}">
           <i class="bi bi-person-circle"></i>
-          <span>Profile</span>
+          <span>{{ $t('common.common.profile') }}</span>
         </li>
         <li @click="activeTab = 'placeOrder'" :class="{active: activeTab === 'placeOrder'}">
           <i class="bi bi-bag-plus"></i>
-          <span>Place Order</span>
+          <span>{{ $t('common.common.placeOrder') }}</span>
         </li>
-        <li @click="activeTab = 'cart'" :class="{active: activeTab === 'cart'}">
+        <li @click="openCart" :class="{active: activeTab === 'cart'}">
           <i class="bi bi-cart"></i>
-          <span>Cart</span>
-          <span v-if="cart.length" class="cart-badge">{{ cart.length }}</span>
+          <span>{{ $t('common.common.cart') }}</span>
+          <span v-if="cartTotalItems > 0" class="cart-badge">{{ cartTotalItems }}</span>
         </li>
         <li @click="activeTab = 'orderHistory'" :class="{active: activeTab === 'orderHistory'}">
           <i class="bi bi-clock-history"></i>
-          <span>Order History</span>
+          <span>{{ $t('common.common.orderHistory') }}</span>
         </li>
       </ul>
+      
+      <div class="language-section">
+        <LanguageSwitcher context="sidebar" />
+      </div>
       
       <div class="logout-section">
         <button class="btn-logout" @click="logout">
           <i class="bi bi-box-arrow-right"></i>
-          <span>Logout</span>
+          <span>{{ $t('common.navigation.logout') }}</span>
         </button>
       </div>
     </aside>
 
     <main class="main-content">
       <div class="content-header">
-        <h1>{{ tabTitles[activeTab] }}</h1>
+        <h1>{{ getTabTitle() }}</h1>
         <div class="actions-area">
-          <div class="notification-bell">
-            <i class="bi bi-bell"></i>
-            <span v-if="pendingOrders > 0" class="notification-badge">{{ pendingOrders }}</span>
-          </div>
+          <LanguageSwitcher />
+          
+          <NotificationBell
+            v-if="isAdmin"
+            @notification-click="handleNotificationClick"
+          />
+          
+          <button
+            class="cart-button"
+            @click="openCart"
+            :class="{ 'has-items': cartTotalItems > 0 }"
+          >
+            <i class="bi bi-cart3"></i>
+            <span v-if="cartTotalItems > 0" class="cart-count">{{ cartTotalItems }}</span>
+          </button>
         </div>
       </div>
       
       <div class="content-body">
+        <!-- Loading State -->
         <div v-if="isLoading" class="loading-container">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
@@ -63,358 +83,416 @@
           <p>Loading your data...</p>
         </div>
         
-        <component
-          v-else
-          :is="currentTabComponent"
-          :profile="profile"
-          :cart="cart"
-          @update-profile="updateProfile"
-          @cart-changed="loadOrderHistory"
-          @update-cart="updateCart"
-        />
+        <!-- Profile Tab -->
+        <div v-else-if="activeTab === 'profile'">
+          <ProfileTab 
+            :profile="profile" 
+            :cart="cartStore.items || []"
+            @update-profile="updateProfile"
+            @cart-changed="loadOrderHistory"
+            @update-cart="updateCart"
+          />
+        </div>
+        
+        <!-- Place Order Tab -->
+        <div v-else-if="activeTab === 'placeOrder'">
+          <PlaceOrderTab 
+            :profile="profile" 
+            :cart="cartStore.items || []"
+            @update-profile="updateProfile"
+            @cart-changed="loadOrderHistory"
+            @update-cart="updateCart"
+          />
+        </div>
+        
+        <!-- Order History Tab -->
+        <div v-else-if="activeTab === 'orderHistory'">
+          <OrderHistoryTab 
+            :profile="profile" 
+            :cart="cartStore.items || []"
+            @update-profile="updateProfile"
+            @cart-changed="loadOrderHistory"
+            @update-cart="updateCart"
+          />
+        </div>
+        
+        <!-- Default State -->
+        <div v-else class="no-tab">
+          <p>Select a tab to get started</p>
+        </div>
       </div>
     </main>
+
+    <!-- Cart Drawer -->
+    <CartDrawer
+      :is-open="isCartOpen"
+      @close="closeCart"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth';
+import { useCartStore } from '@/stores/cart';
 import { getCustomerByUserId, updateCustomer } from '@/services/customerService';
 import { getOrdersByCustomer } from '@/services/orderService';
 import ProfileTab from '@/components/ProfileTab.vue';
 import PlaceOrderTab from '@/components/PlaceOrderTab.vue';
-import CartTab from '@/components/CartTab.vue';
 import OrderHistoryTab from '@/components/OrderHistoryTab.vue';
+import CartDrawer from '@/features/cart/components/CartDrawer.vue';
+import NotificationBell from '@/features/notifications/components/NotificationBell.vue';
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 
+const { t } = useI18n();
 const authStore = useAuthStore();
+const cartStore = useCartStore();
 const router = useRouter();
 const route = useRoute();
 
 const activeTab = ref('profile');
 const profile = ref({});
-const cart = ref([]);
 const orders = ref([]);
 const isLoading = ref(true);
 const loadError = ref(null);
+const isCartOpen = ref(false);
 
-// Check authentication status
-if (!authStore.isAuthenticated) {
-  router.push('/login');
-}
-
-const pendingOrders = computed(() => 
-  orders.value.filter(order => order.status === 'PENDING').length
-);
-
-// Set active tab based on query parameter
-onMounted(() => {
-  if (route.query.tab && ['profile', 'placeOrder', 'cart', 'orderHistory'].includes(route.query.tab)) {
-    activeTab.value = route.query.tab;
-  }
-  
-  loadCustomerProfile();
+// Computed
+const isAdmin = computed(() => {
+  return authStore.user?.roles?.includes('ROLE_ADMIN');
 });
 
-// Update URL when tab changes
-watch(activeTab, (newTab) => {
-  router.push({ query: { tab: newTab } });
-});
+const cartTotalItems = computed(() => cartStore.totalItems);
 
-const tabTitles = {
-  profile: 'My Profile',
-  placeOrder: 'Shop Products',
-  cart: 'Shopping Cart',
-  orderHistory: 'Order History'
+// Methods
+const getTabTitle = () => {
+  const titles = {
+    profile: t('common.common.profile') || 'Profile',
+    placeOrder: t('common.common.placeOrder') || 'Place Order',
+    cart: t('common.common.cart') || 'Cart',
+    orderHistory: t('common.common.orderHistory') || 'Order History'
+  };
+  return titles[activeTab.value] || 'Dashboard';
 };
 
-const currentTabComponent = computed(() => {
-  switch (activeTab.value) {
-    case 'profile':
-      return ProfileTab;
-    case 'placeOrder':
-      return PlaceOrderTab;
-    case 'cart':
-      return CartTab;
-    case 'orderHistory':
-      return OrderHistoryTab;
-    default:
-      return ProfileTab;
-  }
-});
-
-async function loadCustomerProfile() {
+const loadProfile = async () => {
   try {
-    isLoading.value = true;
-    loadError.value = null;
-    
     if (!authStore.user || !authStore.user.id) {
-      console.error('No user ID found in auth store');
-      loadError.value = 'Authentication error. Please log in again.';
-      router.push('/login');
+      console.error('No user found');
       return;
     }
-    
-    const userId = authStore.user.id;
-    console.log('Loading profile for user ID:', userId);
-    
-    const response = await getCustomerByUserId(userId);
-    console.log('Customer profile loaded:', response.data);
-    
-    if (response.data) {
-      profile.value = response.data;
-      // After profile is loaded, load orders
-      await loadOrderHistory();
-    } else {
-      console.error('No customer profile found for user ID:', userId);
-      loadError.value = 'Customer profile not found.';
-    }
+    isLoading.value = true;
+    const response = await getCustomerByUserId(authStore.user.id);
+    profile.value = response.data || {};
   } catch (error) {
-    console.error('Error loading customer profile:', error);
-    loadError.value = 'Failed to load profile data. Please try again.';
+    console.error('Error loading profile:', error);
+    loadError.value = 'Failed to load profile';
+    profile.value = {};
   } finally {
     isLoading.value = false;
   }
-}
+};
 
-async function loadOrderHistory() {
+const handleTabFromUrl = () => {
+  const tabParam = route.query.tab;
+  if (tabParam && ['profile', 'placeOrder', 'orderHistory'].includes(tabParam)) {
+    activeTab.value = tabParam;
+  }
+};
+
+const updateProfile = async (updatedProfile) => {
   try {
     if (profile.value && profile.value.id) {
-      console.log('Loading orders for customer ID:', profile.value.id);
+      const response = await updateCustomer(profile.value.id, updatedProfile);
+      profile.value = response.data;
+    }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+  }
+};
+
+const loadOrderHistory = async () => {
+  try {
+    if (profile.value && profile.value.id) {
       const response = await getOrdersByCustomer(profile.value.id);
-      orders.value = response.data || [];
-      console.log('Orders loaded:', orders.value);
-    } else {
-      console.warn('Cannot load orders: No customer ID available');
-      orders.value = [];
+      orders.value = response.data;
     }
   } catch (error) {
     console.error('Error loading order history:', error);
-    // Don't set loading error for orders, as it's secondary data
   }
-}
+};
 
-async function updateProfile(updatedProfile) {
-  try {
-    await updateCustomer(updatedProfile.id, updatedProfile);
-    profile.value = updatedProfile;
-    alert('Profile updated successfully!');
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    alert('Failed to update profile. Please try again.');
-  }
-}
+const updateCart = (newCart) => {
+  // This method is kept for backward compatibility
+  // The cart is now managed by the Pinia store
+};
 
-function updateCart(newCart) {
-  cart.value = newCart;
-}
+const openCart = () => {
+  isCartOpen.value = true;
+  activeTab.value = 'cart';
+};
 
-function logout() {
+const closeCart = () => {
+  isCartOpen.value = false;
+};
+
+const handleNotificationClick = (notification) => {
+  console.log('Notification clicked:', notification);
+};
+
+const logout = () => {
   authStore.logout();
   router.push('/login');
-}
+};
+
+// Lifecycle
+onMounted(async () => {
+  // Check if user is admin and redirect to admin dashboard
+  if (authStore.user?.roles?.includes('ROLE_ADMIN')) {
+    router.push('/admin')
+    return
+  }
+  
+  // Ensure user is available before loading profile
+  if (authStore.user && authStore.user.id) {
+    await Promise.all([
+      loadProfile(),
+      cartStore.loadCart()
+    ]);
+  } else {
+    console.warn('User not available, skipping profile load');
+    await cartStore.loadCart();
+  }
+  handleTabFromUrl();
+});
+
+// Watch for profile changes to load order history
+watch(() => profile.value?.id, (newId) => {
+  if (newId) {
+    loadOrderHistory();
+  }
+});
 </script>
 
 <style scoped>
 .dashboard {
   display: flex;
-  height: 100vh;
-  background-color: #f8f9fa;
+  min-height: 100vh;
 }
 
 .sidebar {
-  width: 280px;
-  background: linear-gradient(to bottom, #2c3e50, #34495e);
-  color: white;
+  width: 250px;
+  background: var(--color-white);
+  border-right: 1px solid var(--color-border-light);
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  height: 100vh;
+  z-index: var(--z-sticky);
 }
 
 .sidebar-header {
-  padding: 1.5rem;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-light);
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.sidebar-header i {
-  font-size: 1.5rem;
+  gap: var(--spacing-sm);
 }
 
 .sidebar-title {
-  font-size: 1.2rem;
-  font-weight: 600;
   margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
 .user-profile-mini {
-  padding: 1rem;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border-light);
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: var(--spacing-sm);
 }
 
 .avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.avatar i {
-  font-size: 1.5rem;
+  color: var(--color-white);
+  font-size: var(--font-size-lg);
 }
 
 .user-info {
-  display: flex;
-  flex-direction: column;
+  flex: 1;
 }
 
 .user-info strong {
-  font-size: 0.9rem;
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
 }
 
 .user-info small {
-  font-size: 0.75rem;
-  opacity: 0.7;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
 }
 
 .nav-menu {
+  flex: 1;
   list-style: none;
   padding: 0;
   margin: 0;
-  flex-grow: 1;
 }
 
 .nav-menu li {
-  padding: 0.75rem 1.5rem;
+  padding: var(--spacing-md) var(--spacing-lg);
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  cursor: pointer;
+  gap: var(--spacing-sm);
   transition: background-color 0.2s ease;
   position: relative;
 }
 
-.nav-menu li i {
-  font-size: 1.2rem;
-  width: 24px;
-}
-
 .nav-menu li:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--color-background-soft);
 }
 
 .nav-menu li.active {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-left: 4px solid #2ecc71;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.nav-menu li i {
+  font-size: var(--font-size-lg);
 }
 
 .cart-badge {
-  background-color: #e74c3c;
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  position: absolute;
-  right: 1.5rem;
+  background: var(--color-accent);
+  color: var(--color-white);
+  border-radius: var(--radius-full);
+  padding: 0.25rem 0.5rem;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  margin-left: auto;
+}
+
+.language-section {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
 }
 
 .logout-section {
-  padding: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
 }
 
 .btn-logout {
   width: 100%;
-  padding: 0.75rem;
-  background-color: rgba(231, 76, 60, 0.2);
-  color: white;
-  border: 1px solid rgba(231, 76, 60, 0.5);
-  border-radius: 4px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-background-mute);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  cursor: pointer;
+  gap: var(--spacing-sm);
   transition: background-color 0.2s ease;
 }
 
 .btn-logout:hover {
-  background-color: rgba(231, 76, 60, 0.4);
+  background: var(--color-background-soft);
 }
 
 .main-content {
-  flex-grow: 1;
-  overflow-y: auto;
+  flex: 1;
+  margin-left: 250px;
   display: flex;
   flex-direction: column;
 }
 
 .content-header {
-  background-color: white;
-  padding: 1.5rem 2rem;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-light);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  background: var(--color-white);
 }
 
 .content-header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
   margin: 0;
-  color: #2c3e50;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
 .actions-area {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
-.notification-bell {
+.cart-button {
   position: relative;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius);
+  color: var(--color-white);
   cursor: pointer;
-  padding: 0.5rem;
-}
-
-.notification-bell i {
-  font-size: 1.2rem;
-  color: #7f8c8d;
-}
-
-.notification-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background-color: #e74c3c;
-  color: white;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.7rem;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: var(--spacing-sm);
+  transition: all 0.2s ease;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+}
+
+.cart-button:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  color: var(--color-white);
+}
+
+.cart-button.has-items {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.cart-button.has-items:hover {
+  background: var(--color-accent-dark);
+  border-color: var(--color-accent-dark);
+}
+
+.cart-button i {
+  color: var(--color-white);
+  font-size: var(--font-size-lg);
+}
+
+.cart-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--color-accent);
+  color: var(--color-white);
+  border-radius: var(--radius-full);
+  padding: 0.25rem 0.5rem;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
 }
 
 .content-body {
-  padding: 2rem;
-  flex-grow: 1;
+  flex: 1;
+  padding: var(--spacing-lg);
+  background: var(--color-background);
 }
 
 .loading-container {
@@ -422,48 +500,30 @@ function logout() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  gap: 1rem;
+  padding: var(--spacing-xl);
+  text-align: center;
 }
 
-@media (max-width: 992px) {
-  .sidebar {
-    width: 70px;
-  }
-  
-  .sidebar-title, .user-info, .nav-menu li span, .btn-logout span {
-    display: none;
-  }
-  
-  .nav-menu li {
-    padding: 1rem;
-    justify-content: center;
-  }
-  
-  .nav-menu li i {
-    margin: 0;
-  }
-  
-  .cart-badge {
-    top: 0.5rem;
-    right: 0.5rem;
-  }
-  
-  .main-content {
-    margin-left: 0;
-  }
+.loading-container p {
+  margin-top: var(--spacing-md);
+  color: var(--color-text-secondary);
 }
 
-@media (max-width: 768px) {
-  .content-header {
-    padding: 1rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .content-body {
-    padding: 1rem;
-  }
+.no-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.no-profile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-secondary);
 }
 </style>

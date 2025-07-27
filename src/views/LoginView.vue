@@ -4,8 +4,8 @@
       <div class="login-card">
         <div class="text-center mb-4">
           <i class="bi bi-box-seam text-primary" style="font-size: 3rem;"></i>
-          <h1 class="fw-bold mt-3">Welcome to SmartStock</h1>
-          <p class="text-muted">Your complete inventory management solution</p>
+          <h1 class="fw-bold mt-3">{{ $t('auth.login.welcome') }}</h1>
+          <p class="text-muted">{{ $t('common.brand.tagline') }}</p>
         </div>
 
         <div v-if="loginError" class="alert alert-danger" role="alert">
@@ -14,10 +14,10 @@
         </div>
 
         <div class="card p-4 shadow">
-          <h2 class="mb-4 text-center">Login</h2>
+          <h2 class="mb-4 text-center">{{ $t('auth.login.title') }}</h2>
           <form @submit.prevent="handleLogin">
             <div class="mb-3">
-              <label for="username" class="form-label">Username</label>
+              <label for="username" class="form-label">{{ $t('auth.login.username') }}</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-person"></i></span>
                 <input
@@ -25,13 +25,13 @@
                     type="text"
                     id="username"
                     class="form-control"
-                    placeholder="Enter your username"
+                    :placeholder="$t('auth.login.usernamePlaceholder')"
                     required
                 />
               </div>
             </div>
             <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
+              <label for="password" class="form-label">{{ $t('auth.login.password') }}</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-lock"></i></span>
                 <input
@@ -39,18 +39,18 @@
                     type="password"
                     id="password"
                     class="form-control"
-                    placeholder="Enter your password"
+                    :placeholder="$t('auth.login.passwordPlaceholder')"
                     required
                 />
               </div>
             </div>
             <button type="submit" class="btn btn-primary w-100 py-2">
               <i class="bi bi-box-arrow-in-right me-2"></i>
-              Login
+              {{ $t('auth.login.loginButton') }}
             </button>
           </form>
           <div class="mt-3 text-center">
-            <p>Don't have an account? <router-link to="/register" class="text-primary">Register here</router-link></p>
+            <p>{{ $t('auth.login.noAccount') }} <router-link to="/register" class="text-primary">{{ $t('auth.login.registerLink') }}</router-link></p>
           </div>
         </div>
       </div>
@@ -61,9 +61,12 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import MainLayout from '@/components/MainLayout.vue';
 import { loginUser } from '@/services/authService.js';
 import { useAuthStore } from '@/stores/auth';
+
+const { t } = useI18n();
 
 const username = ref('');
 const password = ref('');
@@ -89,13 +92,13 @@ async function handleLogin() {
 
     // Check user roles to determine where to redirect
     if (authStore.user?.roles?.includes('ROLE_ADMIN')) {
-      await router.push('/admin-dashboard');
+      await router.push('/admin');
     } else {
       await router.push('/dashboard');
     }
   } catch (error) {
     console.error('Login error:', error);
-    loginError.value = 'Invalid username or password. Please try again.';
+    loginError.value = t('auth.login.error');
   }
 }
 </script>

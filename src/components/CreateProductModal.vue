@@ -70,7 +70,7 @@
 <script setup>
 /* global bootstrap */
 import { ref, onMounted } from 'vue'
-import { createProduct } from '@/services/productService'
+import { createProduct } from '@/services/productservice'
 
 const emit = defineEmits(['created'])
 

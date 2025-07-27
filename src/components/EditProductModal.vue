@@ -54,7 +54,7 @@
 <script setup>
 /* global bootstrap */
 import { ref, watch, defineProps, defineEmits, onMounted, onBeforeUnmount } from 'vue'
-import { updateProduct } from '@/services/productService'
+import { updateProduct } from '@/services/productservice'
 
 const props = defineProps({
   product: { type: Object, default: null }

@@ -7,7 +7,7 @@
         <input
             type="text"
             v-model="searchQuery"
-            placeholder="Search products..."
+            :placeholder="$t('products.products.searchPlaceholder')"
             class="form-control"
         />
       </div>
@@ -18,7 +18,7 @@
             :class="{ active: selectedCategory === null }"
             @click="selectedCategory = null"
         >
-          All Products
+          {{ $t('products.products.allProducts') }}
         </button>
         <button
             v-for="category in categories"
@@ -37,12 +37,12 @@
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <p>Loading products...</p>
+      <p>{{ $t('products.products.loading') }}</p>
     </div>
 
     <div v-else-if="filteredProducts.length === 0" class="no-products">
       <i class="bi bi-exclamation-circle"></i>
-      <p>No products found. Try a different search or category.</p>
+      <p>{{ $t('products.products.noProductsFound') }}</p>
     </div>
 
     <div v-else class="products-grid">
@@ -55,18 +55,45 @@
               loading="lazy"
               @error="onImgError"
           />
-          <span v-if="product.stock_quantity <= 0" class="badge-out">Out of stock</span>
+          <span v-if="product.stock_quantity <= 0" class="badge-out">{{ $t('products.products.outOfStock') }}</span>
         </div>
 
         <div class="product-info">
           <h4 :title="product.name">{{ product.name }}</h4>
 
           <div class="product-category" v-if="product.category">
-            <span class="badge bg-light text-dark">{{ product.category }}</span>
+            <span class="badge bg-light text-dark">
+              {{ typeof product.category === 'object' && product.category !== null ? product.category.name : product.category }}
+            </span>
+          </div>
+
+          <!-- Product Rating -->
+          <div class="product-rating">
+            <RatingStars 
+              :rating="product.averageRating || 0" 
+              :readonly="true"
+              :show-text="false"
+            />
+            <small class="rating-text" :class="{ 'no-rating': !product.averageRating }">
+              {{ product.averageRating ? product.averageRating.toFixed(1) : $t('products.products.noRating') }} / 5.0
+              <span v-if="product.reviewCount" class="review-count">({{ product.reviewCount }} {{ $t('products.products.reviews') }})</span>
+            </small>
+          </div>
+          
+          <!-- Rate Product Button -->
+          <div class="rate-product-section">
+            <button 
+              type="button" 
+              class="btn btn-outline-secondary btn-sm rate-product-btn"
+              @click="openRatingModal(product)"
+            >
+              <i class="bi bi-star"></i>
+              {{ $t('products.products.rateThisProduct') }}
+            </button>
           </div>
 
           <p class="product-description">
-            {{ product.description || 'No description available' }}
+            {{ product.description || $t('products.products.noDescription') }}
           </p>
 
           <div class="product-price-actions">
@@ -77,7 +104,7 @@
                 :disabled="isProductInCart(product.id) || product.stock_quantity <= 0"
             >
               <i class="bi" :class="isProductInCart(product.id) ? 'bi-check' : 'bi-cart-plus'"></i>
-              {{ isProductInCart(product.id) ? 'Added' : 'Add to Cart' }}
+              {{ isProductInCart(product.id) ? $t('products.products.added') : $t('products.products.addToCart') }}
             </button>
           </div>
         </div>
@@ -92,27 +119,45 @@
       </div>
       <div class="cart-total">
         <span>€{{ cartTotal.toFixed(2) }}</span>
-        <span>View Cart</span>
+        <span>{{ $t('products.products.viewCart') }}</span>
       </div>
     </div>
+
+    <!-- Rating Modal -->
+    <ProductRatingModal
+      v-if="isRatingModalOpen && selectedProductForRating"
+      :is-open="true"
+      :product="selectedProductForRating"
+      @close="closeRatingModal"
+      @rating-submitted="handleRatingSubmitted"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { getAllProducts } from '@/services/productService'
+import { useCartStore } from '@/stores/cart'
+import RatingStars from '@/ui/atoms/RatingStars.vue'
+import ProductRatingModal from '@/components/ProductRatingModal.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   cart: { type: Array, required: true }
 })
-const emit = defineEmits(['update-cart'])
+
+const cartStore = useCartStore()
 
 const router = useRouter()
 const products = ref([])
 const isLoading = ref(true)
 const searchQuery = ref('')
 const selectedCategory = ref(null)
+const isRatingModalOpen = ref(false)
+const selectedProductForRating = ref(null)
 
 // ---- Images helpers (supports imageUrl or image_url; uses fallback if missing/blocked) ----
 const FALLBACK_IMG =
@@ -137,15 +182,26 @@ function onImgError(e) {
 
 // ---- Derived ----
 const categories = computed(() => {
-  const set = new Set(products.value.map(p => p.category).filter(Boolean))
+  const set = new Set(products.value.map(p => {
+    if (typeof p.category === 'object' && p.category !== null) {
+      return p.category.name
+    }
+    return p.category
+  }).filter(Boolean))
   return [...set]
 })
 
 const filteredProducts = computed(() => {
-  let result = products.value
+  // Filter out products with 0 stock first
+  let result = products.value.filter(p => p.stock_quantity > 0)
 
   if (selectedCategory.value) {
-    result = result.filter(p => p.category === selectedCategory.value)
+    result = result.filter(p => {
+      const categoryName = typeof p.category === 'object' && p.category !== null 
+        ? p.category.name 
+        : p.category
+      return categoryName === selectedCategory.value
+    })
   }
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
@@ -167,33 +223,48 @@ function isProductInCart(productId) {
   return props.cart.some(i => i.id === productId)
 }
 
-function addToCart(product) {
+async function addToCart(product) {
   if (isProductInCart(product.id) || product.stock_quantity <= 0) return
 
-  const cartItem = {
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    quantity: 1
+  try {
+    console.log('Adding to cart:', { productId: product.id, productName: product.name })
+    await cartStore.addItem(product.id, 1)
+    // Toast is handled by the cart store, no need for duplicate
+  } catch (error) {
+    console.error('Error adding to cart:', error)
+    // Error toast is handled by the cart store, no need for duplicate
   }
-  emit('update-cart', [...props.cart, cartItem])
-
-  // quick toast
-  const toast = document.createElement('div')
-  toast.className = 'toast-notification'
-  toast.innerHTML = `<i class="bi bi-check-circle"></i> ${product.name} added to cart`
-  document.body.appendChild(toast)
-  setTimeout(() => {
-    toast.classList.add('show')
-    setTimeout(() => {
-      toast.classList.remove('show')
-      setTimeout(() => document.body.removeChild(toast), 300)
-    }, 2000)
-  }, 100)
 }
 
 function goToCart() {
   router.push({ query: { tab: 'cart' } })
+}
+
+function openRatingModal(product) {
+  selectedProductForRating.value = product
+  isRatingModalOpen.value = true
+}
+
+function closeRatingModal() {
+  isRatingModalOpen.value = false
+  selectedProductForRating.value = null
+}
+
+function handleRatingSubmitted(ratingData) {
+  console.log('Rating submitted:', ratingData)
+  
+  // Refresh the product data to show updated average rating
+  refreshProductData()
+}
+
+// Function to refresh product data
+async function refreshProductData() {
+  try {
+    const { data } = await getAllProducts()
+    products.value = data
+  } catch (err) {
+    console.error('Error refreshing products:', err)
+  }
 }
 
 // ---- Load ----
@@ -325,6 +396,43 @@ onMounted(async () => {
 
 .product-category { margin-bottom: 0.4rem; }
 
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.rating-text {
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.review-count {
+  color: #adb5bd;
+  font-size: 0.75rem;
+  margin-left: 0.25rem;
+}
+
+.rating-text.no-rating {
+  color: #adb5bd;
+  font-style: italic;
+}
+
+.rate-product-section {
+  margin-bottom: 0.5rem;
+}
+
+.rate-product-btn {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.rate-product-btn i {
+  margin-right: 0.25rem;
+}
+
 .product-description {
   color: #6c757d;
   font-size: 0.92rem;
@@ -428,6 +536,10 @@ onMounted(async () => {
   transition: bottom 0.3s ease;
 }
 .toast-notification.show { bottom: 2rem; }
+
+.toast-notification.error {
+  background-color: #dc3545;
+}
 
 @media (max-width: 768px) {
   .products-grid {

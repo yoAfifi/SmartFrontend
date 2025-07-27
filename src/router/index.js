@@ -1,80 +1,143 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import LoginView from '@/views/LoginView.vue';
-import DashboardView from '@/views/DashboardView.vue';
-import AdminDashboardView from '@/views/AdminDashboardView.vue';
-import AdminProductsView from '@/views/AdminProductsView.vue';
-import AdminOrdersView from '@/views/AdminOrdersView.vue'; //
-import AdminCustomersView from "@/views/AdminCustomersView.vue";
-import { useAuthStore } from '@/stores/auth';
-
-// Import the orders view
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
-    {
-        path: '/',
-        redirect: '/dashboard'
-    },
-    {
-        path: '/login',
-        name: 'Login',
-        component: () => import('@/views/LoginView.vue'),
-        meta: { requiresAuth: false }
-    },
-    {
-        path: '/dashboard',
-        name: 'Dashboard',
-        component: () => import('@/views/DashboardView.vue'),
-        meta: { requiresAuth: true }
-    },
-    {
-        path: '/admin-dashboard',
-        component: AdminDashboardView,
-        meta: { requiresAuth: true, roles: ['ROLE_ADMIN'] }
-    },
-    {
-        path: '/admin-products',
-        component: AdminProductsView,
-        meta: { requiresAuth: true, roles: ['ROLE_ADMIN'] }
-    },
-    {
-        path: '/register',      // <-- make sure this path matches
-        name: 'Register',
-        component: () => import('@/views/RegisterView.vue'),
-    },
-    {
-        path: '/admin-orders',
-        component: AdminOrdersView,
-        meta: { requiresAuth: true, roles: ['ROLE_ADMIN'] }
-    },
-    {
-        path: '/admin-customers',
-        component: AdminCustomersView,
-        meta: { requiresAuth: true, roles: ['ROLE_ADMIN'] }
+  {
+    path: '/',
+    redirect: (to) => {
+      // Check if user is admin and redirect accordingly
+      const authStore = useAuthStore()
+      if (authStore.isAuthenticated && authStore.user?.roles?.includes('ROLE_ADMIN')) {
+        return '/admin'
+      }
+      return '/dashboard'
     }
-];
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/LoginView.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/RegisterView.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: () => import('@/views/DashboardView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: () => import('@/views/AdminDashboardView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/products',
+    name: 'AdminProducts',
+    component: () => import('@/views/AdminProductsView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/orders',
+    name: 'AdminOrders',
+    component: () => import('@/views/AdminOrdersView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/customers',
+    name: 'AdminCustomers',
+    component: () => import('@/views/AdminCustomersView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/notifications',
+    name: 'AdminNotifications',
+    component: () => import('@/views/AdminNotificationsView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/products/:id',
+    name: 'ProductDetail',
+    component: () => import('@/features/products/views/ProductDetailView.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/checkout',
+    name: 'Checkout',
+    component: () => import('@/views/CheckoutView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/forbidden',
+    name: 'Forbidden',
+    component: () => import('@/views/ForbiddenView.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/NotFoundView.vue')
+  }
+]
 
 const router = createRouter({
-    history: createWebHistory(import.meta.env.BASE_URL),
-    routes
-});
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes
+})
 
+// Preload critical routes for better performance
+router.beforeResolve((to, from, next) => {
+  // Preload the component if it's not already loaded
+  if (to.matched.some(record => record.components)) {
+    const components = to.matched
+      .map(record => record.components.default)
+      .filter(component => typeof component === 'function')
+    
+    Promise.all(components.map(component => component()))
+      .then(() => next())
+      .catch(() => next())
+  } else {
+    next()
+  }
+})
+
+// Navigation guard
 router.beforeEach((to, from, next) => {
-    const authStore = useAuthStore();
-
-    // Check if route requires authentication
-    if (to.matched.some(record => record.meta.requiresAuth)) {
-        // Check if user is authenticated
-        if (!authStore.isAuthenticated) {
-            // Redirect to login page
-            next({ path: '/login', query: { redirect: to.fullPath } });
-        } else {
-            // User is authenticated, proceed
-            next();
-        }
-    } else {
-        // Route doesn't require authentication
-        next();
+  const authStore = useAuthStore()
+  
+  // Check if route requires authentication
+  if (to.meta.requiresAuth) {
+    if (!authStore.isAuthenticated) {
+      // Not authenticated, redirect to login
+      next({ name: 'Login', query: { redirect: to.fullPath } })
+      return
     }
-});
+    
+    // Check if route requires admin role
+    if (to.meta.requiresAdmin) {
+      const user = authStore.user
+      if (!user || !user.roles || !user.roles.includes('ROLE_ADMIN')) {
+        // Not admin, show 403 error
+        next({ name: 'Forbidden' })
+        return
+      }
+    }
+  }
+  
+  // If user is authenticated and trying to access login/register, redirect to dashboard
+  if (authStore.isAuthenticated && (to.name === 'Login' || to.name === 'Register')) {
+    next({ name: 'Dashboard' })
+    return
+  }
+  
+  next()
+})
 
-export default router;
+export default router
