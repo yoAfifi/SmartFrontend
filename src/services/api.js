@@ -20,8 +20,8 @@ export const ErrorTypes = {
 }
 
 // Error mapping function
-function mapErrorToType(error) {
-  if (!error.response) {
+export function mapErrorToType(error) {
+  if (!error || !error.response) {
     return ErrorTypes.NETWORK
   }
   
@@ -43,18 +43,23 @@ function mapErrorToType(error) {
 }
 
 // Error message mapping
-function getErrorMessage(errorType, error) {
-  const messages = {
-    [ErrorTypes.NETWORK]: 'Network error. Please check your connection.',
-    [ErrorTypes.AUTHENTICATION]: 'Authentication failed. Please log in again.',
-    [ErrorTypes.AUTHORIZATION]: 'You do not have permission to perform this action.',
-    [ErrorTypes.VALIDATION]: error.response?.data?.message || 'Invalid data provided.',
-    [ErrorTypes.NOT_FOUND]: 'The requested resource was not found.',
-    [ErrorTypes.SERVER_ERROR]: 'Server error. Please try again later.',
-    [ErrorTypes.UNKNOWN]: 'An unexpected error occurred.'
+export function getErrorMessage(errorType, error) {
+  switch (errorType) {
+    case ErrorTypes.NETWORK:
+      return 'Network error. Please check your connection.'
+    case ErrorTypes.AUTHENTICATION:
+      return 'Authentication failed. Please log in again.'
+    case ErrorTypes.AUTHORIZATION:
+      return 'You do not have permission to perform this action.'
+    case ErrorTypes.VALIDATION:
+      return error?.response?.data?.message || 'Invalid data provided.'
+    case ErrorTypes.NOT_FOUND:
+      return 'The requested resource was not found.'
+    case ErrorTypes.SERVER_ERROR:
+      return 'Server error. Please try again later.'
+    default:
+      return 'An unknown error occurred.'
   }
-  
-  return messages[errorType] || messages[ErrorTypes.UNKNOWN]
 }
 
 // API instances

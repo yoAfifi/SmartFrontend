@@ -2,12 +2,21 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { loginUser as apiLogin, register as apiRegister } from '@/services/authService';
 
+// Helper function for safe JSON parsing
+function safeParse(json) {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 export const useAuthStore = defineStore('auth', () => {
     // Initialize state from localStorage if available
-    const storedUser = localStorage.getItem('user');
+    const storedUserRaw = localStorage.getItem('user');
     const storedToken = localStorage.getItem('token');
 
-    const user = ref(storedUser ? JSON.parse(storedUser) : null);
+    const user = ref(storedUserRaw ? safeParse(storedUserRaw) : null);
     const token = ref(storedToken || null);
     const isAuthenticated = computed(() => !!token.value);
 

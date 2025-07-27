@@ -3,6 +3,13 @@ import './assets/main.css'
 import './styles/tokens/design-tokens.scss'
 import { createApp } from 'vue'
 import App from './App.vue'
+import VueLazyload from 'vue-lazyload'
+
+Vue.use(VueLazyload, {
+  preLoad: 1.3,
+  attempt: 1,
+  cache: true
+})
 
 import router from './router'
 import pinia from './stores'
