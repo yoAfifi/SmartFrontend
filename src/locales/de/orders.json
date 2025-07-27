@@ -1,0 +1,38 @@
+{
+  "orders": {
+    "title": "Bestellungen",
+    "orderHistory": "Bestellverlauf",
+    "orderDetails": "Bestelldetails",
+    "orderNumber": "Bestellnummer",
+    "orderDate": "Bestelldatum",
+    "orderStatus": "Bestellstatus",
+    "orderTotal": "Bestellsumme",
+    "customerInfo": "Kundeninformationen",
+    "shippingAddress": "Lieferadresse",
+    "billingAddress": "Rechnungsadresse",
+    "orderItems": "Bestellartikel",
+    "noOrders": "Keine Bestellungen gefunden",
+    "viewOrder": "Bestellung anzeigen",
+    "trackOrder": "Bestellung verfolgen"
+  },
+  "orderStatus": {
+    "pending": "Ausstehend",
+    "processing": "In Bearbeitung",
+    "shipped": "Versendet",
+    "delivered": "Geliefert",
+    "cancelled": "Storniert",
+    "refunded": "Erstattet"
+  },
+  "orderForm": {
+    "customerName": "Kundenname",
+    "customerEmail": "Kunden-E-Mail",
+    "customerPhone": "Kundentelefon",
+    "shippingAddress": "Lieferadresse",
+    "city": "Stadt",
+    "state": "Bundesland",
+    "zipCode": "PLZ",
+    "country": "Land",
+    "notes": "Bestellnotizen",
+    "notesPlaceholder": "Fügen Sie spezielle Anweisungen hinzu..."
+  }
+} 

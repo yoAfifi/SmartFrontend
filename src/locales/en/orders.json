@@ -1,0 +1,38 @@
+{
+  "orders": {
+    "title": "Orders",
+    "orderHistory": "Order History",
+    "orderDetails": "Order Details",
+    "orderNumber": "Order Number",
+    "orderDate": "Order Date",
+    "orderStatus": "Order Status",
+    "orderTotal": "Order Total",
+    "customerInfo": "Customer Information",
+    "shippingAddress": "Shipping Address",
+    "billingAddress": "Billing Address",
+    "orderItems": "Order Items",
+    "noOrders": "No orders found",
+    "viewOrder": "View Order",
+    "trackOrder": "Track Order"
+  },
+  "orderStatus": {
+    "pending": "Pending",
+    "processing": "Processing",
+    "shipped": "Shipped",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled",
+    "refunded": "Refunded"
+  },
+  "orderForm": {
+    "customerName": "Customer Name",
+    "customerEmail": "Customer Email",
+    "customerPhone": "Customer Phone",
+    "shippingAddress": "Shipping Address",
+    "city": "City",
+    "state": "State",
+    "zipCode": "ZIP Code",
+    "country": "Country",
+    "notes": "Order Notes",
+    "notesPlaceholder": "Add any special instructions..."
+  }
+} 

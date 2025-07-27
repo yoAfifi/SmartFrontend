@@ -1,0 +1,43 @@
+{
+  "customers": {
+    "title": "Kunden",
+    "customerList": "Kundenliste",
+    "customerDetails": "Kundendetails",
+    "addCustomer": "Kunde hinzufügen",
+    "editCustomer": "Kunde bearbeiten",
+    "noCustomers": "Keine Kunden gefunden",
+    "searchCustomers": "Kunden suchen...",
+    "customerName": "Kundenname",
+    "customerEmail": "Kunden-E-Mail",
+    "customerPhone": "Kundentelefon",
+    "customerAddress": "Kundenadresse",
+    "registrationDate": "Registrierungsdatum",
+    "lastLogin": "Letzter Login",
+    "totalOrders": "Gesamtbestellungen",
+    "totalSpent": "Gesamtausgaben",
+    "actions": "Aktionen"
+  },
+  "customerForm": {
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "address": "Adresse",
+    "city": "Stadt",
+    "state": "Bundesland",
+    "zipCode": "PLZ",
+    "country": "Land",
+    "firstNamePlaceholder": "Vornamen eingeben",
+    "lastNamePlaceholder": "Nachnamen eingeben",
+    "emailPlaceholder": "E-Mail-Adresse eingeben",
+    "phonePlaceholder": "Telefonnummer eingeben",
+    "addressPlaceholder": "Adresse eingeben",
+    "cityPlaceholder": "Stadt eingeben",
+    "statePlaceholder": "Bundesland eingeben",
+    "zipCodePlaceholder": "PLZ eingeben",
+    "countryPlaceholder": "Land eingeben",
+    "saveCustomer": "Kunde speichern",
+    "createCustomer": "Kunde erstellen",
+    "updateCustomer": "Kunde aktualisieren"
+  }
+} 

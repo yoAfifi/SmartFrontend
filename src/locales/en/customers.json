@@ -1,0 +1,43 @@
+{
+  "customers": {
+    "title": "Customers",
+    "customerList": "Customer List",
+    "customerDetails": "Customer Details",
+    "addCustomer": "Add Customer",
+    "editCustomer": "Edit Customer",
+    "noCustomers": "No customers found",
+    "searchCustomers": "Search customers...",
+    "customerName": "Customer Name",
+    "customerEmail": "Customer Email",
+    "customerPhone": "Customer Phone",
+    "customerAddress": "Customer Address",
+    "registrationDate": "Registration Date",
+    "lastLogin": "Last Login",
+    "totalOrders": "Total Orders",
+    "totalSpent": "Total Spent",
+    "actions": "Actions"
+  },
+  "customerForm": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "city": "City",
+    "state": "State",
+    "zipCode": "ZIP Code",
+    "country": "Country",
+    "firstNamePlaceholder": "Enter first name",
+    "lastNamePlaceholder": "Enter last name",
+    "emailPlaceholder": "Enter email address",
+    "phonePlaceholder": "Enter phone number",
+    "addressPlaceholder": "Enter address",
+    "cityPlaceholder": "Enter city",
+    "statePlaceholder": "Enter state",
+    "zipCodePlaceholder": "Enter ZIP code",
+    "countryPlaceholder": "Enter country",
+    "saveCustomer": "Save Customer",
+    "createCustomer": "Create Customer",
+    "updateCustomer": "Update Customer"
+  }
+} 
