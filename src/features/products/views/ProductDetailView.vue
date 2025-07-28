@@ -82,12 +82,12 @@
               <div class="product-stock">
                 <div class="stock-info">
                   <i class="bi bi-box-seam"></i>
-                  <span v-if="product.stockQuantity > 5" class="text-success">
-                    {{ product.stockQuantity }} in stock
-                  </span>
-                  <span v-else-if="product.stockQuantity > 0" class="text-warning">
-                    Only {{ product.stockQuantity }} left
-                  </span>
+                              <span v-if="(product.stockQuantity || product.stock_quantity || 0) > 5" class="text-success">
+              {{ product.stockQuantity || product.stock_quantity || 0 }} in stock
+            </span>
+            <span v-else-if="(product.stockQuantity || product.stock_quantity || 0) > 0" class="text-warning">
+              Only {{ product.stockQuantity || product.stock_quantity || 0 }} left
+            </span>
                   <span v-else class="text-danger">
                     Out of stock
                   </span>
@@ -111,13 +111,13 @@
                       v-model.number="quantity"
                       type="number"
                       min="1"
-                      :max="product.stockQuantity"
+                      :max="product.stockQuantity || product.stock_quantity || 0"
                       class="form-control quantity-input"
                     />
                     <button
                       class="btn btn-outline-secondary"
                       @click="increaseQuantity"
-                      :disabled="quantity >= product.stockQuantity"
+                      :disabled="quantity >= (product.stockQuantity || product.stock_quantity || 0)"
                     >
                       <i class="bi bi-plus"></i>
                     </button>
@@ -128,12 +128,12 @@
                   variant="primary"
                   size="lg"
                   icon="bi-cart-plus"
-                  :disabled="product.stockQuantity <= 0"
+                  :disabled="(product.stockQuantity || product.stock_quantity || 0) <= 0"
                   :loading="isAddingToCart"
                   @click="addToCart"
                   block
                 >
-                  {{ product.stockQuantity > 0 ? 'Add to Cart' : 'Out of Stock' }}
+                  {{ (product.stockQuantity || product.stock_quantity || 0) > 0 ? 'Add to Cart' : 'Out of Stock' }}
                 </AppButton>
               </div>
             </div>

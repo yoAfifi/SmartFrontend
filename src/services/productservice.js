@@ -40,6 +40,8 @@ export function getAllProducts(params = {}) {
 }
 
 export function updateProduct(productId, product, file) {
+    console.log('updateProduct called with:', { productId, product, file })
+    
     const fd = new FormData()
     fd.append('product', new Blob([JSON.stringify(product)], { type: 'application/json' }))
     if (file) fd.append('file', file)
@@ -47,8 +49,15 @@ export function updateProduct(productId, product, file) {
     return productApi.put(`/${productId}`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }).then(response => {
+        console.log('Product updated successfully:', response)
         showSuccessToast('Product updated successfully!')
         return response
+    }).catch(error => {
+        console.error('Error in updateProduct:', error)
+        console.error('Error response:', error.response)
+        console.error('Error status:', error.response?.status)
+        console.error('Error data:', error.response?.data)
+        throw error
     })
 }
 

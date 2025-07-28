@@ -33,6 +33,7 @@
             {{ $t('common.navigation.customers') }}
           </router-link>
         </li>
+
       </ul>
     </div>
     

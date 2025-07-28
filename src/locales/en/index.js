@@ -5,6 +5,7 @@ import cart from './cart.json'
 import orders from './orders.json'
 import customers from './customers.json'
 import dashboard from './dashboard.json'
+import analytics from './analytics.json'
 
 export default {
   common,
@@ -13,5 +14,6 @@ export default {
   cart,
   orders,
   customers,
-  dashboard
+  dashboard,
+  analytics
 } 

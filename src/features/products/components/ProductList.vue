@@ -86,7 +86,7 @@
                 v-if="showAddToCart"
                 class="btn btn-sm btn-primary"
                 @click.stop="addToCart(product)"
-                :disabled="product.stockQuantity <= 0"
+                :disabled="(product.stockQuantity || product.stock_quantity || 0) <= 0"
               >
                 <i class="bi bi-cart-plus"></i>
                 Add to Cart
@@ -102,15 +102,15 @@
           </div>
           
           <!-- Stock Badge -->
-          <div v-if="product.stockQuantity === 0" class="stock-badge out-of-stock">
-            Out of Stock
-          </div>
-          <div v-else-if="product.stockQuantity <= 2" class="stock-badge critical-stock">
-            Critical Stock
-          </div>
-          <div v-else-if="product.stockQuantity <= 5" class="stock-badge low-stock">
-            Low Stock
-          </div>
+                      <div v-if="(product.stockQuantity || product.stock_quantity || 0) === 0" class="stock-badge out-of-stock">
+              Out of Stock
+            </div>
+            <div v-else-if="(product.stockQuantity || product.stock_quantity || 0) <= 2" class="stock-badge critical-stock">
+              Critical Stock
+            </div>
+            <div v-else-if="(product.stockQuantity || product.stock_quantity || 0) <= 5" class="stock-badge low-stock">
+              Low Stock
+            </div>
         </div>
 
         <!-- Product Info -->
@@ -145,7 +145,7 @@
             
             <div class="product-stock">
               <small class="text-muted">
-                {{ product.stockQuantity }} in stock
+                {{ product.stockQuantity || product.stock_quantity || 0 }} in stock
               </small>
             </div>
           </div>
@@ -281,7 +281,7 @@ const viewProduct = (product) => {
 }
 
 const addToCart = async (product) => {
-  if (product.stockQuantity <= 0) {
+      if ((product.stockQuantity || product.stock_quantity || 0) <= 0) {
     showWarningToast('This product is out of stock')
     return
   }

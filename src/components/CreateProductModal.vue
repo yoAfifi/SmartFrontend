@@ -29,7 +29,7 @@
             <div class="mb-3">
               <label for="createStock" class="form-label">Stock Quantity</label>
               <input  id="createStock" type="number" class="form-control"
-                      v-model.number="createData.stockQuantity" required />
+                      v-model.number="createData.stock_quantity" required />
             </div>
             <div class="mb-3">
               <label for="createDescription" class="form-label">Description</label>

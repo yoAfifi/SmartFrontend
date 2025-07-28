@@ -130,6 +130,8 @@
       </div>
     </div>
     
+
+    
     <!-- Form Actions -->
     <div class="form-actions">
       <AppButton
@@ -201,10 +203,18 @@ const categoryOptions = computed(() => {
 })
 
 const isFormValid = computed(() => {
-  return formData.value.name &&
-         formData.value.categoryId &&
-         formData.value.price > 0 &&
-         formData.value.stockQuantity >= 0
+  const isValid = formData.value.name && 
+                  formData.value.price > 0 && 
+                  formData.value.stockQuantity >= 0
+  
+  console.log('=== FORM VALIDATION CHECK ===')
+  console.log('Name:', formData.value.name, 'Valid:', !!formData.value.name)
+  console.log('Price:', formData.value.price, 'Valid:', formData.value.price > 0)
+  console.log('Stock:', formData.value.stockQuantity, 'Valid:', formData.value.stockQuantity >= 0)
+  console.log('Category ID:', formData.value.categoryId)
+  console.log('Overall form valid:', isValid)
+  
+  return isValid
 })
 
 // Methods
@@ -282,26 +292,63 @@ const removeImage = () => {
   }
 }
 
-const handleSubmit = async () => {
-  if (!validateForm()) {
+const testButtonClick = () => {
+  console.log('=== BUTTON CLICK DETECTED ===')
+  console.log('Button clicked!')
+  console.log('Form valid:', isFormValid.value)
+  console.log('Form data:', formData.value)
+  console.log('Is submitting:', isSubmitting.value)
+  alert('Button click detected! Check console for details.')
+}
+
+const testFormSubmit = () => {
+  console.log('=== FORM SUBMIT EVENT DETECTED ===')
+  console.log('Form submit event triggered!')
+}
+
+const handleSubmit = async (event) => {
+  console.log('=== PRODUCT FORM HANDLE SUBMIT CALLED ===')
+  console.log('Event:', event)
+  console.log('Form data:', formData.value)
+  console.log('Is submitting:', isSubmitting.value)
+  console.log('Is form valid:', isFormValid.value)
+  console.log('Props product:', props.product)
+  console.log('Props mode:', props.isEdit)
+  
+  if (isSubmitting.value) {
+    console.log('❌ Already submitting, blocking duplicate submission')
     return
   }
-  
+
+  if (!isFormValid.value) {
+    console.log('❌ Form is not valid, blocking submission')
+    console.log('Form validation details:')
+    console.log('- Name:', formData.value.name, 'Valid:', !!formData.value.name)
+    console.log('- Price:', formData.value.price, 'Valid:', formData.value.price > 0)
+    console.log('- Stock:', formData.value.stockQuantity, 'Valid:', formData.value.stockQuantity >= 0)
+    return
+  }
+
+  console.log('✅ Form is valid, proceeding with submission')
+  isSubmitting.value = true
+
   try {
-    isSubmitting.value = true
+    const fileToUpload = imageFile.value
+    console.log('Image file:', fileToUpload)
     
-    const submitData = {
-      ...formData.value,
-      price: parseFloat(formData.value.price),
-      stockQuantity: parseInt(formData.value.stockQuantity)
-    }
+    console.log('Emitting submit event with:', {
+      productData: formData.value,
+      imageFile: fileToUpload
+    })
     
     emit('submit', {
-      productData: submitData,
-      imageFile: imageFile.value
+      productData: formData.value,
+      imageFile: fileToUpload
     })
+    
+    console.log('✅ Submit event emitted successfully')
   } catch (error) {
-    console.error('Form submission error:', error)
+    console.error('❌ Error in handleSubmit:', error)
   } finally {
     isSubmitting.value = false
   }
@@ -310,13 +357,24 @@ const handleSubmit = async () => {
 // Initialize form with product data if editing
 const initializeForm = () => {
   if (props.product) {
+    console.log('=== INITIALIZING PRODUCT FORM ===')
+    console.log('Raw product data:', props.product)
+    console.log('Product stock_quantity:', props.product.stock_quantity)
+    console.log('Product stockQuantity:', props.product.stockQuantity || props.product.stock_quantity)
+    
+    // Handle both camelCase and snake_case field names
+    const stockQty = props.product.stock_quantity !== undefined ? props.product.stock_quantity : 
+                    (props.product.stockQuantity || props.product.stock_quantity) !== undefined ? (props.product.stockQuantity || props.product.stock_quantity) : 0
+    
     formData.value = {
       name: props.product.name || '',
       description: props.product.description || '',
       price: props.product.price || 0,
-      stockQuantity: props.product.stockQuantity || 0,
-      categoryId: props.product.categoryId || ''
+      stockQuantity: stockQty,
+      categoryId: props.product.categoryId || props.product.category_id || ''
     }
+    
+    console.log('Initialized form data:', formData.value)
     
     if (props.product.imageUrl) {
       currentImage.value = props.product.imageUrl
@@ -329,9 +387,25 @@ watch(() => props.product, initializeForm, { immediate: true })
 
 // Load categories on mount
 onMounted(async () => {
+  console.log('=== PRODUCT FORM MOUNTED ===')
+  console.log('Is edit mode:', props.isEdit)
+  console.log('Product prop:', props.product)
+  console.log('Initial form data:', formData.value)
+  
   if (productStore.categories.length === 0) {
+    console.log('Loading categories...')
     await productStore.loadCategories()
+    console.log('Categories loaded:', productStore.categories.length)
+  } else {
+    console.log('Categories already loaded:', productStore.categories.length)
   }
+  
+  // Force validation check after mount
+  setTimeout(() => {
+    console.log('=== POST-MOUNT VALIDATION ===')
+    console.log('Form valid:', isFormValid.value)
+    console.log('Form data:', formData.value)
+  }, 100)
 })
 </script>
 

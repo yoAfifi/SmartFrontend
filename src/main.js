@@ -5,12 +5,6 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import VueLazyload from 'vue-lazyload'
 
-Vue.use(VueLazyload, {
-  preLoad: 1.3,
-  attempt: 1,
-  cache: true
-})
-
 import router from './router'
 import pinia from './stores'
 import i18n from './i18n'
@@ -24,6 +18,13 @@ setupInterceptors()
 setupResponseInterceptors()
 
 const app = createApp(App)
+
+// Configure VueLazyload
+app.use(VueLazyload, {
+  preLoad: 1.3,
+  attempt: 1,
+  cache: true
+})
 
 // Toast configuration
 const toastOptions = {

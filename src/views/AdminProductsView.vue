@@ -5,72 +5,152 @@
 
     <!-- Main Content Area -->
     <div class="main-content">
+      <!-- Header -->
       <div class="header">
-        <h1>Product Management</h1>
-        <div class="header-actions">
-          <AppButton
-            variant="primary"
-            icon="bi-plus-lg"
-            @click="openCreateModal"
-          >
-            Create Product
-          </AppButton>
-        </div>
-      </div>
-
-      <!-- Low Stock Alert Banner -->
-      <div v-if="lowStockProducts.length > 0" class="low-stock-alert">
-        <div class="alert alert-warning d-flex align-items-center" role="alert">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i>
-          <div class="flex-grow-1">
-            <strong>Low Stock Alert!</strong> 
-            {{ lowStockProducts.length }} product{{ lowStockProducts.length > 1 ? 's' : '' }} 
-            {{ lowStockProducts.length > 1 ? 'have' : 'has' }} less than 5 items in stock.
+        <div class="header-content">
+          <div class="header-title">
+            <h1>Product Management</h1>
+            <p>Manage your product catalog</p>
           </div>
-          <button 
-            class="btn btn-sm btn-outline-warning ms-3"
-            @click="showLowStockModal = true"
-          >
-            View Details
-          </button>
-        </div>
-      </div>
-
-      <!-- Zero Stock Alert Banner -->
-      <div v-if="zeroStockProducts.length > 0" class="zero-stock-alert">
-        <div class="alert alert-danger d-flex align-items-center" role="alert">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i>
-          <div class="flex-grow-1">
-            <strong>Zero Stock Alert!</strong> 
-            {{ zeroStockProducts.length }} product{{ zeroStockProducts.length > 1 ? 's' : '' }} 
-            {{ zeroStockProducts.length > 1 ? 'have' : 'has' }} no stock and are hidden from customers.
+          <div class="header-actions">
+            <button class="btn btn-primary" @click="openCreateModal">
+              <i class="bi bi-plus-circle me-2"></i>
+              Add Product
+            </button>
           </div>
-          <button 
-            class="btn btn-sm btn-outline-danger ms-3"
-            @click="showZeroStockModal = true"
-          >
-            Manage Zero Stock
-          </button>
         </div>
       </div>
 
-      <!-- Products List -->
-      <ProductList
-        :show-add-to-cart="false"
-        @product-click="openEditModal"
-      />
+      <!-- Enhanced Stats Dashboard -->
+      <div class="stats-dashboard">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="bi bi-box-seam"></i>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-number">{{ totalProducts }}</h3>
+            <p class="stat-label">Total Products</p>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon warning">
+            <i class="bi bi-exclamation-triangle"></i>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-number">{{ lowStockProducts.length }}</h3>
+            <p class="stat-label">Low Stock</p>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon danger">
+            <i class="bi bi-x-circle"></i>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-number">{{ zeroStockProducts.length }}</h3>
+            <p class="stat-label">Out of Stock</p>
+          </div>
+        </div>
+        
+
+      </div>
+
+      <!-- Enhanced Alerts -->
+      <div v-if="lowStockProducts.length > 0" class="alert-section">
+        <div class="alert-card warning">
+          <div class="alert-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <div class="alert-content">
+            <h4>Low Stock Alert</h4>
+            <p>{{ lowStockProducts.length }} product{{ lowStockProducts.length > 1 ? 's' : '' }} {{ lowStockProducts.length > 1 ? 'have' : 'has' }} less than 5 items in stock.</p>
+          </div>
+          <div class="alert-actions">
+            <AppButton
+              variant="outline-warning"
+              size="sm"
+              @click="showLowStockModal = true"
+            >
+              View Details
+            </AppButton>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="zeroStockProducts.length > 0" class="alert-section">
+        <div class="alert-card danger">
+          <div class="alert-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <div class="alert-content">
+            <h4>Zero Stock Alert</h4>
+            <p>{{ zeroStockProducts.length }} product{{ zeroStockProducts.length > 1 ? 's' : '' }} {{ zeroStockProducts.length > 1 ? 'have' : 'has' }} no stock and are hidden from customers.</p>
+          </div>
+          <div class="alert-actions">
+            <AppButton
+              variant="outline-danger"
+              size="sm"
+              @click="showZeroStockModal = true"
+            >
+              Manage Zero Stock
+            </AppButton>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enhanced Products List -->
+      <div class="products-section">
+        <div class="section-header">
+          <h2>Product Catalog</h2>
+          <div class="filters">
+            <div class="search-box">
+              <i class="bi bi-search"></i>
+              <input
+                type="text"
+                v-model="searchQuery"
+                placeholder="Search products..."
+                class="search-input"
+              />
+            </div>
+            <select v-model="categoryFilter" class="category-filter">
+              <option value="">All Categories</option>
+              <option v-for="category in productStore.categories" :key="category.id" :value="category.id">
+                {{ category.name }}
+              </option>
+            </select>
+            <select v-model="stockFilter" class="stock-filter">
+              <option value="">All Stock Levels</option>
+              <option value="in-stock">In Stock</option>
+              <option value="low-stock">Low Stock</option>
+              <option value="out-of-stock">Out of Stock</option>
+            </select>
+          </div>
+        </div>
+        
+        <ProductList
+          :show-add-to-cart="false"
+          @product-click="openEditModal"
+        />
+      </div>
     </div>
 
-    <!-- Create Product Modal -->
+    <!-- Enhanced Create Product Modal -->
     <div
       v-if="showCreateModal"
       class="custom-modal"
       @click.self="closeCreateModal"
     >
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Create New Product</h5>
+            <div class="modal-title-section">
+              <h5 class="modal-title">
+                <i class="bi bi-plus-circle me-2"></i>
+                Create New Product
+              </h5>
+              <p class="modal-subtitle">Add a new product to your catalog</p>
+            </div>
             <button
               type="button"
               class="btn-close"
@@ -88,16 +168,22 @@
       </div>
     </div>
 
-    <!-- Edit Product Modal -->
+    <!-- Enhanced Edit Product Modal -->
     <div
       v-if="showEditModal && selectedProduct"
       class="custom-modal"
       @click.self="closeEditModal"
     >
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Edit Product</h5>
+            <div class="modal-title-section">
+              <h5 class="modal-title">
+                <i class="bi bi-pencil-square me-2"></i>
+                Edit Product
+              </h5>
+              <p class="modal-subtitle">{{ selectedProduct.name }}</p>
+            </div>
             <button
               type="button"
               class="btn-close"
@@ -117,7 +203,7 @@
       </div>
     </div>
 
-    <!-- Zero Stock Modal -->
+    <!-- Enhanced Zero Stock Modal -->
     <div
       v-if="showZeroStockModal"
       class="custom-modal"
@@ -126,10 +212,13 @@
       <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
-              Zero Stock Products Management
-            </h5>
+            <div class="modal-title-section">
+              <h5 class="modal-title">
+                <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                Zero Stock Products Management
+              </h5>
+              <p class="modal-subtitle">Manage products with no inventory</p>
+            </div>
             <button
               type="button"
               class="btn-close"
@@ -139,16 +228,18 @@
           </div>
           <div class="modal-body">
             <div class="zero-stock-intro mb-4">
-              <div class="alert alert-info">
+              <div class="info-card">
                 <i class="bi bi-info-circle me-2"></i>
-                <strong>Note:</strong> These products have 0 stock and are automatically hidden from customers. 
-                You can either restock them or delete them permanently.
+                <div>
+                  <strong>Note:</strong> These products have 0 stock and are automatically hidden from customers. 
+                  You can either restock them or delete them permanently.
+                </div>
               </div>
             </div>
             
             <div class="zero-stock-table">
               <table class="table table-hover">
-                <thead class="table-dark">
+                <thead>
                   <tr>
                     <th>Product</th>
                     <th>Category</th>
@@ -186,22 +277,22 @@
                     </td>
                     <td>
                       <div class="action-buttons">
-                        <button
-                          class="btn btn-sm btn-success me-2"
+                        <AppButton
+                          variant="success"
+                          size="sm"
+                          icon="bi-plus-circle"
                           @click="restockProduct(product)"
-                          title="Restock Product"
                         >
-                          <i class="bi bi-plus-circle"></i>
                           Restock
-                        </button>
-                        <button
-                          class="btn btn-sm btn-danger"
+                        </AppButton>
+                        <AppButton
+                          variant="danger"
+                          size="sm"
+                          icon="bi-trash"
                           @click="deleteZeroStockProduct(product)"
-                          title="Delete Product"
                         >
-                          <i class="bi bi-trash"></i>
                           Delete
-                        </button>
+                        </AppButton>
                       </div>
                     </td>
                   </tr>
@@ -221,7 +312,7 @@
       </div>
     </div>
 
-    <!-- Low Stock Modal -->
+    <!-- Enhanced Low Stock Modal -->
     <div
       v-if="showLowStockModal"
       class="custom-modal"
@@ -230,10 +321,13 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
-              Low Stock Products
-            </h5>
+            <div class="modal-title-section">
+              <h5 class="modal-title">
+                <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                Low Stock Products
+              </h5>
+              <p class="modal-subtitle">Products requiring restocking</p>
+            </div>
             <button
               type="button"
               class="btn-close"
@@ -257,24 +351,26 @@
                     <p class="product-price">€{{ formatPrice(product.price) }}</p>
                   </div>
                   <div class="stock-info">
-                    <div class="stock-badge" :class="getStockBadgeClass(product.stockQuantity)">
-                      {{ product.stockQuantity }} in stock
-                    </div>
+                                <div class="stock-badge" :class="getStockBadgeClass(product.stockQuantity || product.stock_quantity || 0)">
+              {{ product.stockQuantity || product.stock_quantity || 0 }} in stock
+            </div>
                     <div class="stock-actions">
-                      <button
-                        class="btn btn-sm btn-primary"
+                      <AppButton
+                        variant="primary"
+                        size="sm"
+                        icon="bi-pencil"
                         @click="editLowStockProduct(product)"
                       >
-                        <i class="bi bi-pencil"></i>
                         Edit Stock
-                      </button>
-                      <button
-                        class="btn btn-sm btn-danger"
+                      </AppButton>
+                      <AppButton
+                        variant="danger"
+                        size="sm"
+                        icon="bi-trash"
                         @click="deleteLowStockProduct(product)"
                       >
-                        <i class="bi bi-trash"></i>
                         Delete
-                      </button>
+                      </AppButton>
                     </div>
                   </div>
                 </div>
@@ -293,7 +389,7 @@
       </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- Enhanced Delete Confirmation Modal -->
     <div
       v-if="showDeleteModal"
       class="custom-modal"
@@ -301,7 +397,13 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Confirm Delete</h5>
+            <div class="modal-title-section">
+              <h5 class="modal-title">
+                <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                Confirm Delete
+              </h5>
+              <p class="modal-subtitle">This action cannot be undone</p>
+            </div>
             <button
               type="button"
               class="btn-close"
@@ -310,8 +412,23 @@
             ></button>
           </div>
           <div class="modal-body">
-            <p>Are you sure you want to delete "<strong>{{ selectedProduct?.name }}</strong>"?</p>
-            <p class="text-danger">This action cannot be undone.</p>
+            <div class="delete-confirmation">
+              <div class="product-preview">
+                <img 
+                  :src="getProductImage(selectedProduct)" 
+                  :alt="selectedProduct?.name"
+                  class="product-image"
+                />
+                <div class="product-details">
+                  <h6>{{ selectedProduct?.name }}</h6>
+                  <p class="text-muted">{{ selectedProduct?.description }}</p>
+                </div>
+              </div>
+              <div class="warning-message">
+                <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                Are you sure you want to delete this product? This action cannot be undone.
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
             <AppButton
@@ -323,6 +440,7 @@
             <AppButton
               variant="danger"
               :loading="isDeleting"
+              icon="bi-trash"
               @click="confirmDelete"
             >
               Delete Product
@@ -341,17 +459,38 @@ import ProductList from '@/features/products/components/ProductList.vue'
 import ProductForm from '@/features/products/components/ProductForm.vue'
 import AppButton from '@/ui/atoms/AppButton.vue'
 import { useProductStore } from '@/stores/products'
-import { showSuccessToast, showWarningToast } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
+import { showSuccessToast, showWarningToast, showErrorToast } from '@/services/api'
 
 const productStore = useProductStore()
+const authStore = useAuthStore()
+
+// User data
+const user = computed(() => authStore.user)
+
+
+
+// Search and filter states
+const searchQuery = ref('')
+const categoryFilter = ref('')
+const stockFilter = ref('')
 
 // Computed properties
+const totalProducts = computed(() => productStore.products.length)
+
+const inStockProducts = computed(() => {
+  return productStore.products.filter(product => (product.stockQuantity || product.stock_quantity || 0) > 5).length
+})
+
 const lowStockProducts = computed(() => {
-  return productStore.products.filter(product => product.stockQuantity < 5 && product.stockQuantity > 0)
+  return productStore.products.filter(product => {
+    const stock = product.stockQuantity || product.stock_quantity || 0
+    return stock < 5 && stock > 0
+  })
 })
 
 const zeroStockProducts = computed(() => {
-  return productStore.products.filter(product => product.stockQuantity === 0)
+  return productStore.products.filter(product => (product.stockQuantity || product.stock_quantity || 0) === 0)
 })
 
 // Modal states
@@ -393,24 +532,82 @@ const closeDeleteModal = () => {
 }
 
 const handleCreateProduct = async ({ productData, imageFile }) => {
+  console.log('=== HANDLE CREATE PRODUCT CALLED ===')
+  console.log('Product data:', productData)
+  console.log('Image file:', imageFile)
+  
+  // Check if user is admin
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const isAdmin = user.roles?.includes('ROLE_ADMIN')
+  
+  console.log('User roles:', user.roles)
+  console.log('Is admin:', isAdmin)
+  
+  if (!isAdmin) {
+    console.error('User is not an admin')
+    showWarningToast('You need admin privileges to create products')
+    return
+  }
+  
   try {
     await productStore.createNewProduct(productData, imageFile)
     closeCreateModal()
     showSuccessToast('Product created successfully!')
   } catch (error) {
     console.error('Error creating product:', error)
-    showWarningToast('Failed to create product')
+    if (error.response?.status === 403) {
+      showWarningToast('Access denied. You need admin privileges to create products.')
+    } else {
+      showWarningToast('Failed to create product')
+    }
   }
 }
 
 const handleUpdateProduct = async ({ productData, imageFile }) => {
+  console.log('=== HANDLE UPDATE PRODUCT CALLED ===')
+  console.log('Product data:', productData)
+  console.log('Image file:', imageFile)
+  console.log('Selected product ID:', selectedProduct.value?.id)
+  
+  // Debug the productData structure
+  console.log('=== PRODUCT DATA DEBUG ===')
+  console.log('productData type:', typeof productData)
+  console.log('productData keys:', Object.keys(productData))
+  console.log('productData.stockQuantity:', productData.stockQuantity)
+  console.log('productData.stock_quantity:', productData.stock_quantity)
+  console.log('productData.stockQuantity type:', typeof productData.stockQuantity)
+  console.log('JSON.stringify(productData):', JSON.stringify(productData))
+  
+  // Check if user is admin
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const isAdmin = user.roles?.includes('ROLE_ADMIN')
+  
+  console.log('=== AUTHENTICATION DEBUG ===')
+  console.log('Raw user from localStorage:', user)
+  console.log('User roles:', user.roles)
+  console.log('Is admin:', isAdmin)
+  console.log('Auth store user:', authStore.user)
+  console.log('Auth store user roles:', authStore.user?.roles)
+  
+  if (!isAdmin) {
+    console.error('❌ USER IS NOT AN ADMIN - BLOCKING UPDATE')
+    showWarningToast('You need admin privileges to update products. Current roles: ' + (user.roles?.join(', ') || 'None'))
+    return
+  }
+  
+  console.log('✅ USER IS ADMIN - PROCEEDING WITH UPDATE')
+  
   try {
     await productStore.updateExistingProduct(selectedProduct.value.id, productData, imageFile)
     closeEditModal()
     showSuccessToast('Product updated successfully!')
   } catch (error) {
     console.error('Error updating product:', error)
-    showWarningToast('Failed to update product')
+    if (error.response?.status === 403) {
+      showWarningToast('Access denied. You need admin privileges to update products.')
+    } else {
+      showWarningToast('Failed to update product')
+    }
   }
 }
 
@@ -480,7 +677,7 @@ const deleteZeroStockProduct = (product) => {
 }
 
 const getProductImage = (product) => {
-  return product.imageUrl || product.image_url || '/placeholder-product.jpg'
+  return product?.imageUrl || product?.image_url || '/placeholder-product.jpg'
 }
 
 const formatDate = (dateString) => {
@@ -537,89 +734,327 @@ onUnmounted(() => {
 .dashboard {
   display: flex;
   min-height: 100vh;
+  background: var(--color-bg-secondary);
 }
 
 .main-content {
   flex: 1;
   margin-left: 250px;
-  background: var(--color-bg-secondary);
+  padding: 0;
 }
 
+/* Enhanced Header */
 .header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-lg);
-  background: var(--color-white);
-  border-bottom: 1px solid var(--color-border-light);
-  box-shadow: var(--shadow-sm);
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.header h1 {
-  margin: 0;
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-bold);
+.header-left {
+  flex: 1;
 }
 
-.header-actions {
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
   display: flex;
-  gap: var(--spacing-md);
+  align-items: center;
 }
 
-/* Custom Modal Styles */
+.page-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.create-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.create-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Stats Dashboard */
+.stats-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  background: var(--primary-color);
+}
+
+.stat-icon.warning {
+  background: var(--warning-color);
+}
+
+.stat-icon.danger {
+  background: var(--danger-color);
+}
+
+.stat-icon.success {
+  background: var(--success-color);
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-dark);
+}
+
+.stat-label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Alert Sections */
+.alert-section {
+  padding: 0 2rem;
+  max-width: 1400px;
+  margin: 0 auto 2rem auto;
+}
+
+.alert-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.alert-card.warning {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-left: 4px solid var(--warning-color);
+}
+
+.alert-card.danger {
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  border-left: 4px solid var(--danger-color);
+}
+
+.alert-icon {
+  font-size: 1.5rem;
+  color: var(--warning-color);
+}
+
+.alert-card.danger .alert-icon {
+  color: var(--danger-color);
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-content h4 {
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.alert-content p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* Products Section */
+.products-section {
+  padding: 0 2rem 2rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.section-header h2 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box i {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+  z-index: 1;
+}
+
+.search-input {
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  min-width: 250px;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+}
+
+.category-filter,
+.stock-filter {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.category-filter:focus,
+.stock-filter:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+}
+
+/* Enhanced Modal Styles */
 .custom-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-modal);
-  padding: var(--spacing-md);
+  z-index: 1050;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
 }
 
 .custom-modal .modal-dialog {
-  background: var(--color-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
   width: 100%;
+  border: none;
 }
 
 .custom-modal .modal-content {
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .custom-modal .modal-header {
-  padding: var(--spacing-lg);
+  padding: 1.5rem 2rem;
   border-bottom: 1px solid var(--color-border-light);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.modal-title-section {
+  flex: 1;
 }
 
 .custom-modal .modal-title {
+  margin: 0 0 0.25rem 0;
+  font-weight: 600;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+}
+
+.modal-subtitle {
   margin: 0;
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
 .custom-modal .modal-body {
-  padding: var(--spacing-lg);
+  padding: 2rem;
 }
 
 .custom-modal .modal-footer {
-  padding: var(--spacing-lg);
+  padding: 1.5rem 2rem;
   border-top: 1px solid var(--color-border-light);
   display: flex;
   justify-content: flex-end;
-  gap: var(--spacing-md);
+  gap: 1rem;
+  background: #f8f9fa;
 }
 
 .custom-modal .btn-close {
@@ -628,178 +1063,74 @@ onUnmounted(() => {
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-secondary);
-  transition: var(--transition-fast);
+  color: var(--text-muted);
+  transition: all 0.3s ease;
+  border-radius: 50%;
 }
 
 .custom-modal .btn-close:hover {
-  color: var(--color-text-primary);
+  color: var(--text-dark);
+  background: rgba(0, 0, 0, 0.05);
 }
 
-/* Low Stock Alert Styles */
-.low-stock-alert,
-.zero-stock-alert {
-  margin-bottom: var(--spacing-lg);
-}
-
-.low-stock-alert .alert {
-  border: none;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.low-stock-products {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.low-stock-item {
-  padding: var(--spacing-md);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-md);
-  background: var(--color-white);
-  transition: var(--transition-fast);
-}
-
-.low-stock-item:hover {
-  box-shadow: var(--shadow-sm);
-}
-
-.low-stock-item .product-info {
+/* Info Card */
+.info-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--spacing-md);
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  border-radius: 8px;
+  color: var(--info-color);
 }
 
-.low-stock-item .product-details {
-  flex: 1;
+/* Delete Confirmation */
+.delete-confirmation {
+  text-align: center;
 }
 
-.low-stock-item .product-name {
-  margin: 0 0 var(--spacing-xs) 0;
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-}
-
-.low-stock-item .product-category,
-.low-stock-item .product-price {
-  margin: 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.low-stock-item .stock-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--spacing-sm);
-}
-
-.low-stock-item .stock-badge {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-}
-
-.low-stock-item .stock-badge.critical-stock {
-  background-color: var(--color-danger);
-  color: var(--color-white);
-}
-
-.low-stock-item .stock-badge.low-stock {
-  background-color: var(--color-warning);
-  color: var(--color-white);
-}
-
-.low-stock-item .stock-badge.out-of-stock {
-  background-color: var(--color-gray-500);
-  color: var(--color-white);
-}
-
-.low-stock-item .stock-actions {
-  display: flex;
-  gap: var(--spacing-xs);
-}
-
-@media (max-width: 768px) {
-  .low-stock-item .product-info {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .low-stock-item .stock-info {
-    align-items: flex-start;
-    width: 100%;
-  }
-  
-  .low-stock-item .stock-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-}
-
-/* Zero Stock Table Styles */
-.zero-stock-table {
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.product-info-cell {
+.product-preview {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 1rem;
 }
 
-.product-thumbnail {
-  width: 50px;
-  height: 50px;
+.product-image {
+  width: 60px;
+  height: 60px;
   object-fit: cover;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   border: 1px solid var(--color-border-light);
 }
 
-.action-buttons {
+.warning-message {
   display: flex;
-  gap: var(--spacing-xs);
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  border-radius: 8px;
+  color: var(--danger-color);
+  font-weight: 500;
 }
 
-.table th {
-  position: sticky;
-  top: 0;
-  background: var(--color-gray-800);
-  color: var(--color-white);
-  z-index: 1;
-}
-
-.table tbody tr:hover {
-  background-color: var(--color-gray-50);
-}
-
-/* Ensure modal content is interactive */
-.custom-modal .modal-content {
-  position: relative;
-  z-index: 1;
-}
-
-.custom-modal .modal-body {
-  position: relative;
-  z-index: 1;
-}
-
-/* Ensure form inputs are focusable */
-.custom-modal input,
-.custom-modal textarea,
-.custom-modal select {
-  position: relative;
-  z-index: 2;
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .stats-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -807,19 +1138,71 @@ onUnmounted(() => {
     margin-left: 70px;
   }
   
-  .header {
+  .header-content {
     flex-direction: column;
-    gap: var(--spacing-md);
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .page-title {
+    font-size: 2rem;
+  }
+  
+  .stats-dashboard {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: 1rem;
     align-items: stretch;
   }
   
-  .header-actions {
-    justify-content: center;
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
   }
   
-  .modal-xl {
-    max-width: 95%;
-    margin: var(--spacing-sm);
+  .search-input {
+    min-width: unset;
+  }
+  
+  .alert-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .products-section {
+    padding: 1rem;
+  }
+  
+  .alert-section {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 1rem;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .stat-card {
+    padding: 1rem;
+  }
+  
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
   }
 }
 </style>

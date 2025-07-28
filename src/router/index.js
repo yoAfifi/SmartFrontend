@@ -34,7 +34,7 @@ const routes = [
   {
     path: '/admin',
     name: 'AdminDashboard',
-    component: () => import('@/views/AdminDashboardView.vue'),
+    component: () => import('@/views/AdminDashboardHome.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
@@ -61,6 +61,13 @@ const routes = [
     component: () => import('@/views/AdminNotificationsView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
+  {
+    path: '/admin/low-stock',
+    name: 'AdminLowStock',
+    component: () => import('@/views/AdminLowStockView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+
   {
     path: '/products/:id',
     name: 'ProductDetail',

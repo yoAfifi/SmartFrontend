@@ -1,5 +1,9 @@
 <template>
   <div class="dashboard">
+    <!-- Header -->
+    <header class="header">
+      <!-- Header content will go here if needed -->
+    </header>
 
     <!-- Sidebar -->
     <aside class="sidebar">
@@ -28,11 +32,6 @@
         <li @click="activeTab = 'placeOrder'" :class="{active: activeTab === 'placeOrder'}">
           <i class="bi bi-bag-plus"></i>
           <span>{{ $t('common.common.placeOrder') }}</span>
-        </li>
-        <li @click="openCart" :class="{active: activeTab === 'cart'}">
-          <i class="bi bi-cart"></i>
-          <span>{{ $t('common.common.cart') }}</span>
-          <span v-if="cartTotalItems > 0" class="cart-badge">{{ cartTotalItems }}</span>
         </li>
         <li @click="activeTab = 'orderHistory'" :class="{active: activeTab === 'orderHistory'}">
           <i class="bi bi-clock-history"></i>
@@ -67,9 +66,13 @@
             class="cart-button"
             @click="openCart"
             :class="{ 'has-items': cartTotalItems > 0 }"
+            :title="cartTotalItems > 0 ? `${cartTotalItems} items in cart` : 'Your cart is empty'"
           >
-            <i class="bi bi-cart3"></i>
-            <span v-if="cartTotalItems > 0" class="cart-count">{{ cartTotalItems }}</span>
+            <div class="cart-icon-wrapper">
+              <i class="bi bi-cart3"></i>
+              <span v-if="cartTotalItems > 0" class="cart-count">{{ cartTotalItems }}</span>
+            </div>
+            <span v-if="cartTotalItems > 0" class="cart-text">Cart</span>
           </button>
         </div>
       </div>
@@ -171,7 +174,6 @@ const getTabTitle = () => {
   const titles = {
     profile: t('common.common.profile') || 'Profile',
     placeOrder: t('common.common.placeOrder') || 'Place Order',
-    cart: t('common.common.cart') || 'Cart',
     orderHistory: t('common.common.orderHistory') || 'Order History'
   };
   return titles[activeTab.value] || 'Dashboard';
@@ -231,7 +233,6 @@ const updateCart = (newCart) => {
 
 const openCart = () => {
   isCartOpen.value = true;
-  activeTab.value = 'cart';
 };
 
 const closeCart = () => {
@@ -361,26 +362,21 @@ watch(() => profile.value?.id, (newId) => {
 }
 
 .nav-menu li:hover {
-  background-color: var(--color-background-soft);
+  background: var(--color-primary-light);
+  color: var(--color-white);
+  border-radius: var(--radius-lg);
+  transform: translateX(4px);
 }
 
 .nav-menu li.active {
-  background-color: var(--color-primary);
+  background: var(--color-primary);
   color: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .nav-menu li i {
   font-size: var(--font-size-lg);
-}
-
-.cart-badge {
-  background: var(--color-accent);
-  color: var(--color-white);
-  border-radius: var(--radius-full);
-  padding: 0.25rem 0.5rem;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  margin-left: auto;
 }
 
 .language-section {
@@ -441,52 +437,104 @@ watch(() => profile.value?.id, (newId) => {
 }
 
 .cart-button {
-  position: relative;
-  padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-primary);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius);
   color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-base);
   cursor: pointer;
+  transition: all var(--transition-normal);
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  transition: all 0.2s ease;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-medium);
+  position: relative;
+  box-shadow: var(--shadow-sm);
 }
 
 .cart-button:hover {
   background: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
-  color: var(--color-white);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .cart-button.has-items {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  animation: pulse 2s infinite;
 }
 
 .cart-button.has-items:hover {
-  background: var(--color-accent-dark);
-  border-color: var(--color-accent-dark);
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.cart-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cart-button i {
-  color: var(--color-white);
   font-size: var(--font-size-lg);
+  transition: transform var(--transition-normal);
+}
+
+.cart-button:hover i {
+  transform: scale(1.1);
 }
 
 .cart-count {
   position: absolute;
   top: -8px;
   right: -8px;
-  background: var(--color-accent);
+  background: var(--color-danger);
   color: var(--color-white);
   border-radius: var(--radius-full);
   padding: 0.25rem 0.5rem;
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-white);
+  animation: bounce 1s infinite;
+}
+
+.cart-text {
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(46, 204, 113, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(-2px);
+  }
 }
 
 .content-body {
