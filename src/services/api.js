@@ -107,12 +107,20 @@ export const authApi = axios.create({
 export const setupInterceptors = () => {
   const interceptor = (config) => {
     const token = localStorage.getItem('token')
+    console.log('=== REQUEST INTERCEPTOR DEBUG ===')
+    console.log('Request URL:', config.url)
+    console.log('Request method:', config.method)
+    console.log('Token exists:', !!token)
+    console.log('Token length:', token?.length)
+    
     if (token) {
       // Validate token format before using it
       try {
         const tokenParts = token.split('.')
+        console.log('Token parts count:', tokenParts.length)
         if (tokenParts.length === 3) {
           config.headers.Authorization = `Bearer ${token}`
+          console.log('Authorization header set:', config.headers.Authorization ? 'Yes' : 'No')
         } else {
           console.warn('Invalid token format, removing from localStorage')
           localStorage.removeItem('token')
@@ -123,11 +131,13 @@ export const setupInterceptors = () => {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
       }
+    } else {
+      console.warn('No token found in localStorage')
     }
     return config
   }
 
-  // Apply to all API instances except auth
+  // Apply to all API instances except auth (auth doesn't need token for login/register)
   const apis = [productApi, categoryApi, reviewApi, cartApi, notificationApi, orderApi, customerApi]
   apis.forEach(api => api.interceptors.request.use(interceptor))
 }
@@ -192,6 +202,7 @@ export const setupResponseInterceptors = () => {
         // For 403 errors, show warning but don't automatically logout
         // as it might be a temporary permission issue
         if (!shownToasts.has(errorKey)) {
+          console.warn('403 Authorization error - user might not have required permissions')
           toast.error('You do not have permission to perform this action.')
           shownToasts.add(errorKey)
           setTimeout(() => shownToasts.delete(errorKey), 5000)
@@ -210,8 +221,8 @@ export const setupResponseInterceptors = () => {
     return Promise.reject(error)
   }
 
-  // Apply to all API instances
-  const apis = [productApi, categoryApi, reviewApi, cartApi, notificationApi, orderApi, customerApi, authApi]
+  // Apply to all API instances except auth
+  const apis = [productApi, categoryApi, reviewApi, cartApi, notificationApi, orderApi, customerApi]
   apis.forEach(api => api.interceptors.response.use(responseInterceptor, errorInterceptor))
 }
 

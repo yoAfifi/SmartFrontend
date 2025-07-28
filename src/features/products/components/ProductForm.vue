@@ -263,17 +263,27 @@ const handleDrop = (event) => {
 }
 
 const validateAndSetImage = (file) => {
+  console.log('=== FILE VALIDATION DEBUG ===')
+  console.log('File name:', file.name)
+  console.log('File type:', file.type)
+  console.log('File size:', file.size, 'bytes')
+  console.log('File size (MB):', (file.size / (1024 * 1024)).toFixed(2), 'MB')
+  
   // Validate file type
   if (!file.type.startsWith('image/')) {
+    console.error('❌ Invalid file type:', file.type)
     errors.value.image = 'Please select a valid image file'
     return
   }
   
   // Validate file size (5MB)
   if (file.size > 5 * 1024 * 1024) {
+    console.error('❌ File too large:', (file.size / (1024 * 1024)).toFixed(2), 'MB')
     errors.value.image = 'Image size must be less than 5MB'
     return
   }
+  
+  console.log('✅ File validation passed')
   
   // Clear previous errors
   delete errors.value.image
@@ -281,6 +291,8 @@ const validateAndSetImage = (file) => {
   // Set file and preview
   imageFile.value = file
   imagePreview.value = URL.createObjectURL(file)
+  
+  console.log('✅ File set successfully')
 }
 
 const removeImage = () => {

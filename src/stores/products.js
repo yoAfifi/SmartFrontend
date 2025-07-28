@@ -74,6 +74,23 @@ export const useProductStore = defineStore('products', () => {
       
       const response = await getAllProducts(filters.value)
       products.value = response.data.content || response.data || []
+      
+      console.log('=== PRODUCT STORE DEBUG ===')
+      console.log('Raw response:', response)
+      console.log('Products loaded:', products.value)
+      
+      // Debug each product's category data
+      products.value.forEach((product, index) => {
+        console.log(`Product ${index + 1}:`, {
+          id: product.id,
+          name: product.name,
+          categoryId: product.categoryId,
+          category: product.category,
+          category_id: product.category_id,
+          categoryName: product.categoryName,
+          fullProduct: product
+        })
+      })
     } catch (err) {
       error.value = 'Failed to load products'
       console.error('Error loading products:', err)
@@ -86,6 +103,10 @@ export const useProductStore = defineStore('products', () => {
     try {
       const response = await getAllCategories()
       categories.value = response.data || []
+      
+      console.log('=== CATEGORIES LOADED DEBUG ===')
+      console.log('Categories response:', response)
+      console.log('Categories loaded:', categories.value)
     } catch (err) {
       console.error('Error loading categories:', err)
       categories.value = []

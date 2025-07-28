@@ -83,7 +83,7 @@
           <div class="product-overlay">
             <div class="overlay-actions">
               <button
-                v-if="showAddToCart"
+                v-if="showAddToCart && !isAdmin"
                 class="btn btn-sm btn-primary"
                 @click.stop="addToCart(product)"
                 :disabled="(product.stockQuantity || product.stock_quantity || 0) <= 0"
@@ -92,12 +92,32 @@
                 Add to Cart
               </button>
               <button
+                v-if="!isAdmin"
                 class="btn btn-sm btn-outline-light"
                 @click.stop="viewProduct(product)"
               >
                 <i class="bi bi-eye"></i>
                 View Details
               </button>
+              <!-- Admin Actions -->
+              <div v-if="isAdmin" class="admin-actions">
+                <button
+                  class="btn btn-sm btn-outline-warning"
+                  @click.stop="viewProduct(product)"
+                  title="Edit Product"
+                >
+                  <i class="bi bi-pencil"></i>
+                  Edit
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  @click.stop="confirmDelete(product)"
+                  title="Delete Product"
+                >
+                  <i class="bi bi-trash"></i>
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
           
@@ -119,7 +139,7 @@
             <h5 class="product-name">{{ product.name }}</h5>
             <div class="product-category">
               <span class="badge bg-light text-dark">
-                {{ getCategoryName(product.categoryId) }}
+                {{ getCategoryName(product) }}
               </span>
             </div>
           </div>
@@ -185,10 +205,14 @@ const props = defineProps({
   showAddToCart: {
     type: Boolean,
     default: true
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['product-click'])
+const emit = defineEmits(['product-click', 'delete-product'])
 
 const productStore = useProductStore()
 const cartStore = useCartStore()
@@ -218,7 +242,7 @@ const filteredProducts = computed(() => {
     filtered = filtered.filter(p => 
       p.name.toLowerCase().includes(query) ||
       p.description?.toLowerCase().includes(query) ||
-      getCategoryName(p.categoryId).toLowerCase().includes(query)
+      getCategoryName(p).toLowerCase().includes(query)
     )
   }
 
@@ -260,9 +284,37 @@ const handleImageError = (event) => {
   event.target.src = '/placeholder-product.jpg'
 }
 
-const getCategoryName = (categoryId) => {
-  const category = categories.value.find(c => c.id === categoryId)
-  return category ? category.name : 'Uncategorized'
+const getCategoryName = (product) => {
+  console.log('=== CATEGORY NAME DEBUG ===')
+  console.log('Product:', product)
+  console.log('Available categories:', categories.value)
+  
+  // Check if product has a category object
+  if (product.category && product.category.name) {
+    console.log('Found category from product.category:', product.category)
+    return product.category.name
+  }
+  
+  // Check if product has categoryId
+  if (product.categoryId) {
+    const category = categories.value.find(c => c.id === product.categoryId)
+    console.log('Found category from categoryId:', category)
+    if (category) {
+      return category.name
+    }
+  }
+  
+  // Check if product has category_id
+  if (product.category_id) {
+    const category = categories.value.find(c => c.id === product.category_id)
+    console.log('Found category from category_id:', category)
+    if (category) {
+      return category.name
+    }
+  }
+  
+  console.warn('No category found for product:', product)
+  return 'Uncategorized'
 }
 
 const truncateDescription = (description) => {
@@ -292,6 +344,10 @@ const addToCart = async (product) => {
   } catch (error) {
     console.error('Error adding to cart:', error)
   }
+}
+
+const confirmDelete = (product) => {
+  emit('delete-product', product)
 }
 
 // Lifecycle
@@ -430,6 +486,17 @@ watch(() => productStore.filters, (newFilters) => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+}
+
+.admin-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-direction: column;
+}
+
+.admin-actions .btn {
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 .stock-badge {

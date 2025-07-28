@@ -55,12 +55,7 @@ const routes = [
     component: () => import('@/views/AdminCustomersView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
-  {
-    path: '/admin/notifications',
-    name: 'AdminNotifications',
-    component: () => import('@/views/AdminNotificationsView.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
+
   {
     path: '/admin/low-stock',
     name: 'AdminLowStock',

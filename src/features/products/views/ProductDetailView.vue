@@ -59,7 +59,7 @@
               <!-- Category -->
               <div class="product-category">
                 <span class="badge bg-primary">
-                  {{ getCategoryName(product.categoryId) }}
+                  {{ getCategoryName(product) }}
                 </span>
               </div>
 
@@ -477,9 +477,29 @@ const handleImageError = (event) => {
   event.target.src = '/placeholder-product.jpg'
 }
 
-const getCategoryName = (categoryId) => {
-  const category = productStore.categories.find(c => c.id === categoryId)
-  return category ? category.name : 'Uncategorized'
+const getCategoryName = (product) => {
+  // Check if product has a category object
+  if (product.category && product.category.name) {
+    return product.category.name
+  }
+  
+  // Check if product has categoryId
+  if (product.categoryId) {
+    const category = productStore.categories.find(c => c.id === product.categoryId)
+    if (category) {
+      return category.name
+    }
+  }
+  
+  // Check if product has category_id
+  if (product.category_id) {
+    const category = productStore.categories.find(c => c.id === product.category_id)
+    if (category) {
+      return category.name
+    }
+  }
+  
+  return 'Uncategorized'
 }
 
 const formatPrice = (price) => {

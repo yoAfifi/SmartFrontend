@@ -103,7 +103,9 @@
       <div class="products-section">
         <ProductList
           :show-add-to-cart="false"
+          :is-admin="true"
           @product-click="openEditModal"
+          @delete-product="openDeleteModal"
         />
       </div>
     </div>
@@ -239,7 +241,7 @@
                     </td>
                     <td>
                       <span class="badge bg-secondary">
-                        {{ getCategoryName(product.categoryId) }}
+                        {{ getCategoryName(product) }}
                       </span>
                     </td>
                     <td>
@@ -319,7 +321,7 @@
                   <div class="product-details">
                     <h6 class="product-name">{{ product.name }}</h6>
                     <p class="product-category">
-                      Category: {{ getCategoryName(product.categoryId) }}
+                      Category: {{ getCategoryName(product) }}
                     </p>
                     <p class="product-price">€{{ formatPrice(product.price) }}</p>
                   </div>
@@ -434,6 +436,7 @@ import AppButton from '@/ui/atoms/AppButton.vue'
 import { useProductStore } from '@/stores/products'
 import { useAuthStore } from '@/stores/auth'
 import { showSuccessToast, showWarningToast, showErrorToast } from '@/services/api'
+import { checkBackendStatus } from '@/services/backendStatus'
 
 const productStore = useProductStore()
 const authStore = useAuthStore()
@@ -506,17 +509,77 @@ const handleCreateProduct = async ({ productData, imageFile }) => {
   console.log('Product data:', productData)
   console.log('Image file:', imageFile)
   
-  // Check if user is admin
+  // Enhanced debugging for authentication
+  const token = localStorage.getItem('token')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const isAdmin = user.roles?.includes('ROLE_ADMIN')
   
+  console.log('=== AUTHENTICATION DEBUG ===')
+  console.log('Token exists:', !!token)
+  console.log('Token length:', token?.length)
+  console.log('Raw user from localStorage:', user)
   console.log('User roles:', user.roles)
   console.log('Is admin:', isAdmin)
+  console.log('Auth store user:', authStore.user)
+  console.log('Auth store user roles:', authStore.user?.roles)
+  
+  // Debug JWT token structure
+  if (token) {
+    try {
+      const tokenParts = token.split('.')
+      console.log('Token parts count:', tokenParts.length)
+      if (tokenParts.length === 3) {
+        const payload = JSON.parse(atob(tokenParts[1].replace(/-/g, '+').replace(/_/g, '/')))
+        console.log('JWT Payload:', payload)
+        console.log('JWT Roles:', payload.roles)
+        console.log('JWT Authorities:', payload.authorities)
+      }
+    } catch (error) {
+      console.error('Error parsing JWT token:', error)
+    }
+  }
   
   if (!isAdmin) {
     console.error('User is not an admin')
     showWarningToast('You need admin privileges to create products')
     return
+  }
+  
+  // Check backend status before making the request
+  console.log('=== BACKEND STATUS CHECK ===')
+  const backendAvailable = await checkBackendStatus()
+  console.log('Backend available:', backendAvailable)
+  
+  if (!backendAvailable) {
+    showWarningToast('Backend services are not available. Please check if the server is running.')
+    return
+  }
+  
+  // Test authentication with a simple GET request
+  console.log('=== AUTHENTICATION TEST ===')
+  try {
+    const testResponse = await fetch('/api/products', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+    console.log('Test request status:', testResponse.status)
+    console.log('Test request headers:', testResponse.headers)
+  } catch (error) {
+    console.error('Test request failed:', error)
+  }
+  
+  // Debug image file specifically
+  console.log('=== IMAGE FILE DEBUG ===')
+  if (imageFile) {
+    console.log('Image file details:', {
+      name: imageFile.name,
+      type: imageFile.type,
+      size: imageFile.size,
+      sizeMB: (imageFile.size / (1024 * 1024)).toFixed(2)
+    })
+  } else {
+    console.log('No image file provided')
   }
   
   try {
@@ -525,10 +588,18 @@ const handleCreateProduct = async ({ productData, imageFile }) => {
     showSuccessToast('Product created successfully!')
   } catch (error) {
     console.error('Error creating product:', error)
+    console.error('Error response:', error.response)
+    console.error('Error status:', error.response?.status)
+    console.error('Error data:', error.response?.data)
+    
     if (error.response?.status === 403) {
       showWarningToast('Access denied. You need admin privileges to create products.')
+    } else if (error.response?.status === 401) {
+      showWarningToast('Authentication failed. Please log in again.')
+    } else if (error.response?.status === 500) {
+      showWarningToast('Server error. Please try again later.')
     } else {
-      showWarningToast('Failed to create product')
+      showWarningToast(`Failed to create product: ${error.message}`)
     }
   }
 }
@@ -614,9 +685,29 @@ const deleteLowStockProduct = (product) => {
   showDeleteModal.value = true
 }
 
-const getCategoryName = (categoryId) => {
-  const category = productStore.categories.find(cat => cat.id === categoryId)
-  return category ? category.name : 'Unknown Category'
+const getCategoryName = (product) => {
+  // Check if product has a category object
+  if (product.category && product.category.name) {
+    return product.category.name
+  }
+  
+  // Check if product has categoryId
+  if (product.categoryId) {
+    const category = productStore.categories.find(cat => cat.id === product.categoryId)
+    if (category) {
+      return category.name
+    }
+  }
+  
+  // Check if product has category_id
+  if (product.category_id) {
+    const category = productStore.categories.find(cat => cat.id === product.category_id)
+    if (category) {
+      return category.name
+    }
+  }
+  
+  return 'Unknown Category'
 }
 
 const formatPrice = (price) => {
@@ -664,6 +755,14 @@ const formatDate = (dateString) => {
 
 // Lifecycle
 onMounted(async () => {
+  // Debug authentication status
+  console.log('=== AUTHENTICATION STATUS ON MOUNT ===')
+  console.log('Auth store user:', authStore.user)
+  console.log('Auth store token:', authStore.token)
+  console.log('Auth store isAuthenticated:', authStore.isAuthenticated)
+  console.log('localStorage user:', localStorage.getItem('user'))
+  console.log('localStorage token:', localStorage.getItem('token'))
+  
   await productStore.initialize()
   
   // Show low stock notification if there are low stock products
@@ -1094,6 +1193,45 @@ onUnmounted(() => {
   border-radius: 8px;
   color: var(--danger-color);
   font-weight: 500;
+}
+
+.delete-confirmation {
+  text-align: center;
+}
+
+.product-preview {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--color-border-light);
+}
+
+.product-preview .product-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-light);
+}
+
+.product-preview .product-details {
+  flex: 1;
+  text-align: left;
+}
+
+.product-preview .product-details h6 {
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text-primary);
+}
+
+.product-preview .product-details p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
 }
 
 /* Responsive Design */

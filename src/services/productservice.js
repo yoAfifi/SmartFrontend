@@ -23,11 +23,25 @@ export function createProduct(product, file) {
     fd.append('product', new Blob([JSON.stringify(product)], { type: 'application/json' }))
     if (file) fd.append('file', file)
 
+    console.log('=== CREATE PRODUCT DEBUG ===')
+    console.log('Product data:', product)
+    console.log('File:', file)
+    console.log('FormData entries:')
+    for (let [key, value] of fd.entries()) {
+        console.log(`${key}:`, value)
+    }
+
     return productApi.post('', fd, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }).then(response => {
         showSuccessToast('Product created successfully!')
         return response
+    }).catch(error => {
+        console.error('=== CREATE PRODUCT ERROR DEBUG ===')
+        console.error('Error details:', error)
+        console.error('Request config:', error.config)
+        console.error('Response:', error.response)
+        throw error
     })
 }
 
