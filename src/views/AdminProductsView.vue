@@ -101,33 +101,6 @@
 
       <!-- Enhanced Products List -->
       <div class="products-section">
-        <div class="section-header">
-          <h2>Product Catalog</h2>
-          <div class="filters">
-            <div class="search-box">
-              <i class="bi bi-search"></i>
-              <input
-                type="text"
-                v-model="searchQuery"
-                placeholder="Search products..."
-                class="search-input"
-              />
-            </div>
-            <select v-model="categoryFilter" class="category-filter">
-              <option value="">All Categories</option>
-              <option v-for="category in productStore.categories" :key="category.id" :value="category.id">
-                {{ category.name }}
-              </option>
-            </select>
-            <select v-model="stockFilter" class="stock-filter">
-              <option value="">All Stock Levels</option>
-              <option value="in-stock">In Stock</option>
-              <option value="low-stock">Low Stock</option>
-              <option value="out-of-stock">Out of Stock</option>
-            </select>
-          </div>
-        </div>
-        
         <ProductList
           :show-add-to-cart="false"
           @product-click="openEditModal"
@@ -470,10 +443,7 @@ const user = computed(() => authStore.user)
 
 
 
-// Search and filter states
-const searchQuery = ref('')
-const categoryFilter = ref('')
-const stockFilter = ref('')
+
 
 // Computed properties
 const totalProducts = computed(() => productStore.products.length)
